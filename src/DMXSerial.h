@@ -1,14 +1,20 @@
 // - - - - -
-// DMXSerial - A hardware supported interface to DMX.
+// DMXSerial - A Arduino library for sending and receiving DMX using the builtin serial hardware port.
 // DMXSerial.h: Library header file
 // 
-// Copyright (c) 2011 by Matthias Hertel, http://www.mathertel.de
+// Copyright (c) 2011-2014 by Matthias Hertel, http://www.mathertel.de
 // This work is licensed under a BSD style license. See http://www.mathertel.de/License.aspx
 // 
 // Documentation and samples are available at http://www.mathertel.de/Arduino
 // 25.07.2011 creation of the DMXSerial library.
 // 01.12.2011 include file changed to work with the Arduino 1.0 environment
 // 10.05.2012 added method noDataSince to check how long no packet was received
+// 12.07.2014 added update flag
+//  Until here the maxChannel feature only was used in DMXController mode.
+//  Now it enables triggering the onUpdate function in DMX receiver mode.
+// 
+//  See the WebSite for more information.
+//
 // - - - - -
 
 #ifndef DmxSerial_h
@@ -35,6 +41,10 @@ typedef enum {
 
 // ----- Library Class -----
 
+extern "C" {
+  typedef void (*dmxUpdateFunction)(void);
+}
+
 class DMXSerialClass
 {
   public:
@@ -50,14 +60,29 @@ class DMXSerialClass
     // Write a new value of a channel.
     void    write      (int channel, uint8_t value);
 
-    // Calculate how long no data backet was received
+    uint8_t *getBuffer();
+    
+    // Calculate how long no data packet was received
     unsigned long noDataSince();
+
+    // attach function that will be called when new data was received.
+    void attachOnUpdate(dmxUpdateFunction newFunction);
+
+    // Calculate how long no data backet was received
+    bool dataUpdated();
+    void resetUpdated();
 
     // Terminate operation.
     void    term       (void);
+    
+  private:
+    // Not used.
+    // all private information is in the global _dmxXXX variables for speed and code size optimization.
+    // See DMXSerial.cpp.
 };
 
 // Use the DMXSerial library through the DMXSerial object.
+// There is only one DMX port supported and DMXSerial is a static object.
 extern DMXSerialClass DMXSerial;
 
 #endif

@@ -1,0 +1,16 @@
+= DMX Library for Arduino =
+
+This is a library for sending and receiving DMX codes using the Arduino plattform
+or a ATmega (ATmega168, ATmega328 or similar) processor with a clock speed of 16 MHz. 
+
+For more information about this library please visit us at
+http://www.mathertel.de/Arduino/DMXSerial.aspx
+
+== License ==
+
+Copyright (c) 2005-2015 by Matthias Hertel,  http://www.mathertel.de/
+
+The detailed Software License Agreement can be found at:
+http://www.mathertel.de/License.aspx
+
+
