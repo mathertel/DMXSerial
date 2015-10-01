@@ -18,9 +18,12 @@ DMXMode	KEYWORD1
 init	KEYWORD2
 maxChannel	KEYWORD2
 read	KEYWORD2
-readRelative	KEYWORD2
 write	KEYWORD2
+getBuffer	KEYWORD2
 noDataSince	KEYWORD2
+attachOnUpdate	KEYWORD2
+dataUpdated	KEYWORD2
+resetUpdated	KEYWORD2
 term	KEYWORD2
 
 #######################################
