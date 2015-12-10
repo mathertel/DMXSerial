@@ -21,6 +21,7 @@
 // 19.05.2013 ATmega8 compatibility (beta)
 // 24.08.2013 Optimizations for speed and size.
 //            Removed some "volatile" annotations. 
+// 19.03.2015 DMXModePin as parameter
 // - - - - -
 
 #include "Arduino.h"
@@ -187,7 +188,8 @@ typedef enum {
 // These variables are not class members because they have to be reached by the interrupt implementations.
 // don't use these variable from outside, use the appropriate methods.
 
-DMXMode  _dmxMode; //  Mode of Operation
+DMXMode  _dmxMode;    // Mode of Operation
+int      _dmxModePin; // pin used for I/O direction.
 
 uint8_t _dmxRecvState;  // Current State of receiving DMX Bytes
 int     _dmxChannel;  // the next channel byte to be sent.
@@ -222,7 +224,14 @@ void _DMXSerialWriteByte(uint8_t data);
 
 // (Re)Initialize the specified mode.
 // The mode parameter should be a value from enum DMXMode.
-void DMXSerialClass::init (int mode)
+void DMXSerialClass::init(int mode)
+{
+  init(mode, DMXMODEPIN);
+}
+  
+  // (Re)Initialize the specified mode.
+// The mode parameter should be a value from enum DMXMode.
+void DMXSerialClass::init (int mode, int dmxModePin)
 {
 #ifdef SCOPEDEBUG
   pinMode(DmxTriggerPin, OUTPUT);
@@ -231,6 +240,7 @@ void DMXSerialClass::init (int mode)
 
   // initialize global variables
   _dmxMode = DMXNone;
+  _dmxModePin = dmxModePin;
   _dmxRecvState= IDLE; // initial state
   _dmxChannel = 0;
   _dmxDataPtr = _dmxData;
@@ -246,8 +256,8 @@ void DMXSerialClass::init (int mode)
 
   if (_dmxMode == DMXController) {
     // Setup external mode signal
-    pinMode(DmxModePin, OUTPUT); // enables pin 2 for output to control data direction
-    digitalWrite(DmxModePin, DmxModeOut); // data Out direction
+    pinMode(_dmxModePin, OUTPUT); // enables pin 2 for output to control data direction
+    digitalWrite(_dmxModePin, DmxModeOut); // data Out direction
 
     // Setup Hardware
     // Enable transmitter and interrupt
@@ -260,8 +270,8 @@ void DMXSerialClass::init (int mode)
 
   } else if (_dmxMode == DMXReceiver) {
     // Setup external mode signal
-    pinMode(DmxModePin, OUTPUT); // enables pin 2 for output to control data direction
-    digitalWrite(DmxModePin, DmxModeIn); // data in direction
+    pinMode(_dmxModePin, OUTPUT); // enables pin 2 for output to control data direction
+    digitalWrite(_dmxModePin, DmxModeIn); // data in direction
 
     // Setup Hardware
     // Enable receiver and Receive interrupt
@@ -436,8 +446,18 @@ ISR(USARTn_RX_vect)
     if (_dmxDataPtr == _dmxDataLastPtr) { // all channels received.
       _dmxRecvState = IDLE;	// wait for next break
 
-      if ((_dmxUpdated) && (_dmxOnUpdateFunc))
+      if ((_dmxUpdated) && (_dmxOnUpdateFunc)) {
+        // stop listening on the serial port for now.
+        UCSRnB = 0;
+                
+        // call the update function
         _dmxOnUpdateFunc();
+        
+        // start listening again. Enable receiver and Receive interrupt
+        UCSRnB = (1<<RXENn) | (1<<RXCIEn);
+        _DMXSerialBaud(Calcprescale(DMXSPEED), DMXFORMAT); // Enable serial reception with a 250k rate
+      } // if
+      
       _dmxUpdated = false;
     } // if
     // _dmxChannel++;

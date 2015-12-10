@@ -10,6 +10,7 @@
 // 01.12.2011 include file changed to work with the Arduino 1.0 environment
 // 10.05.2012 added method noDataSince to check how long no packet was received
 // 12.07.2014 added update flag
+// 19.03.2015 DMXModePin as optional parameter
 //  Until here the maxChannel feature only was used in DMXController mode.
 //  Now it enables triggering the onUpdate function in DMX receiver mode.
 // 
@@ -26,7 +27,7 @@
 
 #define DMXSERIAL_MAX 512 // max. number of supported DMX data channels
 
-#define DmxModePin 2     // Arduino pin 2 for controlling the data direction
+#define DMXMODEPIN 2     // Arduino pin 2 for controlling the data direction is the default value.
 #define DmxModeOut HIGH  // set the level to HIGH for outgoing data direction
 #define DmxModeIn  LOW   // set the level to LOW  for incomming data direction
 
@@ -49,7 +50,10 @@ class DMXSerialClass
 {
   public:
     // Initialize for specific mode.
-    void    init       (int mode);
+    void    init (int mode);
+
+    // Initialize for specific mode including a specific mode pin.
+    void    init (int mode, int modePin);
 
     // Set the maximum used channel for DMXController mode.
     void    maxChannel (int channel);
