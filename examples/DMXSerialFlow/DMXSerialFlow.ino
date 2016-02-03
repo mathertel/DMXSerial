@@ -1,7 +1,7 @@
 // - - - - -
 // DmxSerial - A hardware supported interface to DMX.
 // DMXSerialFlow.ino: Sample DMX application for sending 60 DMX values.
-// Copyright (c) 2014 by Matthias Hertel, http://www.mathertel.de
+// Copyright (c) 2014-2015 by Matthias Hertel, http://www.mathertel.de
 // This work is licensed under a BSD style license. See http://www.mathertel.de/License.aspx
 // 
 // Documentation and samples are available at http://www.mathertel.de/Arduino
@@ -21,8 +21,6 @@ const int RedPin =    9;  // PWM output pin for Red Light.
 const int GreenPin =  6;  // PWM output pin for Green Light.
 const int BluePin =   5;  // PWM output pin for Blue Light.
 
-// The number of RGB pixels, RGB channels are transfered
-#define PIXELS 60
 
 void setup(void)
 {
@@ -30,7 +28,6 @@ void setup(void)
   // Serial.println("DMXSerialFlow DMX Example");
 
   DMXSerial.init(DMXController);
-  // DMXSerial.init(DMXController, 4);
 
   // Set the number of channels the controller will send
   // this call is not needed, because the DMXController extends the DMX packet length automatically when data is added.
@@ -84,7 +81,7 @@ void loop(void)
   // uncomment this line to have a scenario where DMX values are changed every 5 seconds 
   // alpha &= 0xFF00;
 
-  for (int n = 0; n < PIXELS; n++) {
+  for (int n = 0; n < 20; n++) {
     setChannelRGB (n*3+1, alpha + n*64);
   } // for
   

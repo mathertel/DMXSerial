@@ -5,7 +5,7 @@
 // address 2 (green) -> PWM Port 6
 // address 3 (blue) -> PWM Port 5
 // 
-// Copyright (c) 2011 by Matthias Hertel, http://www.mathertel.de
+// Copyright (c) 2011-2015 by Matthias Hertel, http://www.mathertel.de
 // This work is licensed under a BSD style license. See http://www.mathertel.de/License.aspx
 // 
 // Documentation and samples are available at http://www.mathertel.de/Arduino
