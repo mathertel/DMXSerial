@@ -22,21 +22,16 @@
 // 24.08.2013 Optimizations for speed and size.
 //            Removed some "volatile" annotations. 
 // 19.03.2015 DMXModePin as parameter
+// 25.08.2016 SCOPEDEBUG removed.
+// 04.06.2017 Serial Initialization consolidated into _DMXSerialInit,
+//            _DMXStartSending and _DMXStartReceiving functions.
+// 27.08.2017 DMXProbe mode finished.
 // - - - - -
 
 #include "Arduino.h"
 
 #include "DMXSerial.h"
 #include <avr/interrupt.h>
-
-// ----- Debugging -----
-
-// to debug on an oscilloscope, enable this
-#undef SCOPEDEBUG
-#ifdef SCOPEDEBUG
-#define DmxTriggerPin 4	// low spike at beginning of start byte
-#define DmxISRPin 3	// low during interrupt service routines
-#endif
 
 // ----- Constants -----
 
@@ -83,6 +78,7 @@
 // These definitions are used on ATmega168p and ATmega328p boards
 // like the Arduino Diecimila, Duemilanove, 2009, Uno
 #define UCSRnA UCSR0A
+#define RXCn   RXC0
 #define TXCn   TXC0
 #define UCSRnB UCSR0B
 #define RXCIEn RXCIE0
@@ -107,6 +103,7 @@
 // These definitions are used on ATmega1280 and ATmega2560 boards
 // like the Arduino MEGA boards
 #define UCSRnA UCSR0A
+#define RXCn   RXC0
 #define TXCn   TXC0
 #define UCSRnB UCSR0B
 #define RXCIEn RXCIE0
@@ -132,6 +129,7 @@
 // on ATmega32U4 boards like Arduino Leonardo, Esplora
 // You can use it on other boards with USART1 by enabling the DMX_USE_PORT1 port definition
 #define UCSRnA UCSR1A
+#define RXCn   RXC1
 #define TXCn   TXC1
 #define UCSRnB UCSR1B
 #define RXCIEn RXCIE1
@@ -175,8 +173,12 @@
 
 // State of receiving DMX Bytes
 typedef enum {
-  IDLE, BREAK, DATA
-} DMXReceivingState;
+  STARTUP = 1,  // wait for any interrupt BEFORE starting anylyzig the DMX protocoll.
+  IDLE    = 2,  // wait for a BREAK condition.
+  BREAK   = 3,  // BREAK was detected.
+  DATA    = 4,  // DMX data.
+  DONE    = 5   // All channels received.
+} __attribute__((packed)) DMXReceivingState;
 
 // ----- Macros -----
 
@@ -198,7 +200,6 @@ volatile unsigned int  _dmxMaxChannel = 32; // the last channel used for sending
 volatile unsigned long _dmxLastPacket = 0; // the last time (using the millis function) a packet was received.
 
 bool _dmxUpdated = true; // is set to true when new data arrived.
-dmxUpdateFunction _dmxOnUpdateFunc = NULL;
 
 // Array of DMX values (raw).
 // Entry 0 will never be used for DMX data but will store the startbyte (0 for DMX mode).
@@ -216,8 +217,12 @@ DMXSerialClass DMXSerial;
 
 // ----- forwards -----
 
-void _DMXSerialBaud(uint16_t baud_setting, uint8_t format);
-void _DMXSerialWriteByte(uint8_t data);
+void _DMXSerialInit(uint16_t baud_setting, uint8_t mode, uint8_t format);
+inline void _DMXSerialWriteByte(uint8_t data);
+
+void _DMXStartSending();
+void _DMXStartReceiving();
+
 
 
 // ----- Class implementation -----
@@ -228,23 +233,21 @@ void DMXSerialClass::init(int mode)
 {
   init(mode, DMXMODEPIN);
 }
-  
-  // (Re)Initialize the specified mode.
-// The mode parameter should be a value from enum DMXMode.
-void DMXSerialClass::init (int mode, int dmxModePin)
-{
-#ifdef SCOPEDEBUG
-  pinMode(DmxTriggerPin, OUTPUT);
-  pinMode(DmxISRPin, OUTPUT);
-#endif
 
+// (Re)Initialize the specified mode.
+// The mode parameter should be a value from enum DMXMode.
+void DMXSerialClass::init(int mode, int dmxModePin)
+{
   // initialize global variables
   _dmxMode = DMXNone;
   _dmxModePin = dmxModePin;
-  _dmxRecvState= IDLE; // initial state
+  _dmxRecvState = STARTUP; // initial state
   _dmxChannel = 0;
   _dmxDataPtr = _dmxData;
   _dmxLastPacket = millis(); // remember current (relative) time in msecs.
+
+  _dmxMaxChannel = DMXSERIAL_MAX; // The default in Receiver mode is reading all possible 512 channels.
+  _dmxDataLastPtr = _dmxData + _dmxMaxChannel;
 
   // initialize the DMX buffer
 //  memset(_dmxData, 0, sizeof(_dmxData));
@@ -254,37 +257,25 @@ void DMXSerialClass::init (int mode, int dmxModePin)
   // now start
   _dmxMode = (DMXMode)mode;
 
-  if (_dmxMode == DMXController) {
+  if ((_dmxMode == DMXController) || (_dmxMode == DMXReceiver) || (_dmxMode == DMXProbe)) {
+    // a valid mode was given
     // Setup external mode signal
-    pinMode(_dmxModePin, OUTPUT); // enables pin 2 for output to control data direction
-    digitalWrite(_dmxModePin, DmxModeOut); // data Out direction
+    pinMode(_dmxModePin, OUTPUT); // enables the pin for output to control data direction
+    digitalWrite(_dmxModePin, DmxModeIn); // data in direction, to avoid problems on the DMX line for now.
+    
+    if (_dmxMode == DMXController) {
+      digitalWrite(_dmxModePin, DmxModeOut); // data Out direction
+      _dmxMaxChannel = 32; // The default in Controller mode is sending 32 channels.
+      _DMXStartSending();
+      
+    } else if (_dmxMode == DMXReceiver) {
+      // Setup Hardware
+      _DMXStartReceiving();
 
-    // Setup Hardware
-    // Enable transmitter and interrupt
-    UCSRnB = (1<<TXENn) | (1<<TXCIEn);
+    // } else if (_dmxMode == DMXProbe) {
+    //   // don't setup the Hardware now
 
-    // Start sending a BREAK and loop (forever) in UDRE ISR
-    _DMXSerialBaud(Calcprescale(BREAKSPEED), BREAKFORMAT);
-    _DMXSerialWriteByte((uint8_t)0);
-    _dmxMaxChannel = 32; // The default in Controller mode is sending 32 channels.
-
-  } else if (_dmxMode == DMXReceiver) {
-    // Setup external mode signal
-    pinMode(_dmxModePin, OUTPUT); // enables pin 2 for output to control data direction
-    digitalWrite(_dmxModePin, DmxModeIn); // data in direction
-
-    // Setup Hardware
-    // Enable receiver and Receive interrupt
-    UCSRnB = (1<<RXENn) | (1<<RXCIEn);
-    _DMXSerialBaud(Calcprescale(DMXSPEED), DMXFORMAT); // Enable serial reception with a 250k rate
-
-    _dmxMaxChannel = DMXSERIAL_MAX; // The default in Receiver mode is reading all possible 512 channels.
-    _dmxDataLastPtr = _dmxData + _dmxMaxChannel;
-
-  } else {
-    // Enable receiver and transmitter and interrupts
-    // UCSRnB = (1<<RXENn) | (1<<TXENn) | (1<<RXCIEn) | (1<<UDRIEn);
-
+    }  // if
   } // if
 } // init()
 
@@ -348,23 +339,36 @@ unsigned long DMXSerialClass::noDataSince()
 } // noDataSince()
 
 
-// save function for the onUpdate callback
-void DMXSerialClass::attachOnUpdate(dmxUpdateFunction newFunction)
-{
-  _dmxOnUpdateFunc = newFunction;
-} // attachOnUpdate
-
-
-
+// return true when some DMX data was updated since last resetUpdated() call or onUpdate callback.
 bool DMXSerialClass::dataUpdated()
 {
   return(_dmxUpdated);
 }
 
+// reset DMX data update flag.
 void DMXSerialClass::resetUpdated()
 {
   _dmxUpdated = false;
 }
+
+
+// When mode is DMXProbe this function reads one DMX buffer and then returns.
+void DMXSerialClass::receive()
+{
+  if (_dmxMode == DMXProbe) {
+    _DMXStartReceiving();
+     // UCSRnA
+    while (_dmxRecvState != DONE) {
+      delay(5);
+    } // while
+   
+    if ((_dmxData[1] == 0) && (_dmxData[2] == 0)) {
+      // digitalWrite(9, 1);
+      // delay(500);
+      // digitalWrite(9, 0);
+    }
+  } // if
+} // receive()
 
 
 // Terminate operation
@@ -381,19 +385,51 @@ void DMXSerialClass::term(void)
 // Initialize the Hardware serial port with the given baud rate
 // using 8 data bits, no parity, 2 stop bits for data
 // and 8 data bits, even parity, 1 stop bit for the break
-void _DMXSerialBaud(uint16_t baud_setting, uint8_t format)
+inline void _DMXSerialInit(uint16_t baud_setting, uint8_t mode, uint8_t format)
 {
   // assign the baud_setting to the USART Baud Rate Register
   UCSRnA = 0;                 // 04.06.2012: use normal speed operation
   UBRRnH = baud_setting >> 8;
   UBRRnL = baud_setting;
 
+  // enable USART functions RX, TX, Interrupts
+  UCSRnB = mode;
+  
   // 2 stop bits and 8 bit character size, no parity
   UCSRnC = format;
-} // _DMXSerialBaud
+} // _DMXSerialInit
+
+
+// Setup Hardware for Sending
+void _DMXStartSending()
+{
+  // Start sending a BREAK and send more bytes in UDRE ISR
+  // Enable transmitter and interrupt
+  _DMXSerialInit(Calcprescale(BREAKSPEED), ((1 << TXENn) | (1 << TXCIEn)), BREAKFORMAT);
+
+  _DMXSerialWriteByte((uint8_t)0);
+} // _DMXStartSending()
+
+
+// Setup Hardware for Receiving
+void _DMXStartReceiving()
+{
+  uint8_t  voiddata;
+
+  // Enable receiver and Receive interrupt
+  _dmxDataPtr = _dmxData;
+  _dmxRecvState = STARTUP;
+
+  _DMXSerialInit(Calcprescale(DMXSPEED), (1 << RXENn) | (1 << RXCIEn), DMXFORMAT);
+  // delay(10);  
+  // flush all incomming data packets in the queue
+  while (UCSRnA & (1<<RXCn))
+    voiddata = UDRn; // get data
+  } // _DMXStartReceiving()
+
 
 // send the next byte after current byte was sent completely.
-void _DMXSerialWriteByte(uint8_t data)
+inline void _DMXSerialWriteByte(uint8_t data)
 {
   // putting data into buffer sends the data
   UDRn = data;
@@ -409,65 +445,60 @@ ISR(USARTn_RX_vect)
   uint8_t  DmxByte    = UDRn;	   // get data
   uint8_t  DmxState   = _dmxRecvState;	//just load once from SRAM to increase speed
 
-#ifdef SCOPEDEBUG
-  digitalWrite(DmxISRPin, LOW);
-#endif
+  if (DmxState == STARTUP) {
+    // just ignore any first frame comming in
+    _dmxRecvState = IDLE;
+    return;
+  }
 
   if (USARTstate & (1<<FEn)) {  	//check for break
-    _dmxRecvState = BREAK; // break condition detected.
-    // _dmxChannel = 0;       // The next data byte is the start byte
+    // break condition detected.
+    _dmxRecvState = BREAK;
     _dmxDataPtr = _dmxData;
-      
+    
   } else if (DmxState == BREAK) {
+    // first byte after a break was read.
     if (DmxByte == 0) {
       // normal DMX start code (0) detected
-#ifdef SCOPEDEBUG
-      digitalWrite(DmxTriggerPin, LOW);
-      digitalWrite(DmxTriggerPin, HIGH);
-#endif
-      _dmxRecvState = DATA;  
+      _dmxRecvState = DATA;
       _dmxLastPacket = millis(); // remember current (relative) time in msecs.
-      // _dmxChannel++;       // start with channel # 1
-      _dmxDataPtr++;
+      _dmxDataPtr++; // start saving data with channel # 1
 
     } else {
       // This might be a RDM or customer DMX command -> not implemented so wait for next BREAK !
-      _dmxRecvState = IDLE;
+      _dmxRecvState = DONE;
     } // if
 
   } else if (DmxState == DATA) {
     // check for new data
     if (*_dmxDataPtr != DmxByte) {
       _dmxUpdated = true;
-      // store data
-      *_dmxDataPtr = DmxByte;  //_dmxData[_dmxChannel] = DmxByte;	store received data into dmx data buffer.
+      // store received data into dmx data buffer.
+      *_dmxDataPtr = DmxByte;
     } // if
-
-    if (_dmxDataPtr == _dmxDataLastPtr) { // all channels received.
-      _dmxRecvState = IDLE;	// wait for next break
-
-      if ((_dmxUpdated) && (_dmxOnUpdateFunc)) {
-        // stop listening on the serial port for now.
-        UCSRnB = 0;
-                
-        // call the update function
-        _dmxOnUpdateFunc();
-        
-        // start listening again. Enable receiver and Receive interrupt
-        UCSRnB = (1<<RXENn) | (1<<RXCIEn);
-        _DMXSerialBaud(Calcprescale(DMXSPEED), DMXFORMAT); // Enable serial reception with a 250k rate
-      } // if
-      
-      _dmxUpdated = false;
-    } // if
-    // _dmxChannel++;
     _dmxDataPtr++;
-
+    
+    if (_dmxDataPtr > _dmxDataLastPtr) {
+      // all channels received.
+      _dmxRecvState = DONE;
+    } // if
   } // if
 
-#ifdef SCOPEDEBUG
-  digitalWrite(DmxISRPin, HIGH);
-#endif
+  if (_dmxRecvState == DONE) {
+    if  (_dmxMode == DMXProbe) {
+      // stop listening on the serial port for now.
+      // UCSRnB = 0;
+      // continue listening without interrupts
+       _DMXSerialInit(Calcprescale(DMXSPEED), (1 << RXENn), DMXFORMAT);
+      //UCSRnB = (1 << RXENn);
+      
+      
+    } else {
+      // continue on DMXReceiver mode.
+      _dmxRecvState = IDLE;	// wait for next break
+    }
+  } // if
+  
 } // ISR(USARTn_RX_vect)
 
 
@@ -481,54 +512,39 @@ ISR(USARTn_RX_vect)
 // In DMXReceiver mode this interrupt is disabled and will not occur.
 ISR(USARTn_TX_vect)
 {
-#ifdef SCOPEDEBUG
-  digitalWrite(DmxISRPin, LOW);
-#endif
   if ((_dmxMode == DMXController) && (_dmxChannel == -1)) {
     // this interrupt occurs after the stop bits of the last data byte
     // start sending a BREAK and loop forever in ISR
-    _DMXSerialBaud(Calcprescale(BREAKSPEED), BREAKFORMAT);
+    _DMXSerialInit(Calcprescale(BREAKSPEED), ((1 << TXENn) | (1 << TXCIEn)), BREAKFORMAT);
     _DMXSerialWriteByte((uint8_t)0);
     _dmxChannel = 0;
 
   } else if (_dmxChannel == 0) {
     // this interrupt occurs after the stop bits of the break byte
+
     // now back to DMX speed: 250000baud
-    _DMXSerialBaud(Calcprescale(DMXSPEED), DMXFORMAT);
     // take next interrupt when data register empty (early)
-    UCSRnB = (1<<TXENn) | (1<<UDRIEn);
+    _DMXSerialInit(Calcprescale(DMXSPEED), ((1 << TXENn) | (1 << UDRIEn)), DMXFORMAT);
+
     // write start code
     _DMXSerialWriteByte((uint8_t)0);
     _dmxChannel = 1;
-
-#ifdef SCOPEDEBUG
-    digitalWrite(DmxTriggerPin, LOW);
-    digitalWrite(DmxTriggerPin, HIGH);
-#endif
   } // if
-
-#ifdef SCOPEDEBUG
-  digitalWrite(DmxISRPin, HIGH);
-#endif
 } // ISR(USARTn_TX_vect)
 
 
-// this interrupt occurs after the start bit of the previous data byte
+  // this interrupt occurs after the start bit of the previous data byte
 ISR(USARTn_UDRE_vect)
 {
-#ifdef SCOPEDEBUG
-  digitalWrite(DmxISRPin, LOW);
-#endif
   _DMXSerialWriteByte(_dmxData[_dmxChannel++]);
 
   if (_dmxChannel > _dmxMaxChannel) {
-    _dmxChannel   = -1; // this series is done. Next time: restart with break.
+    _dmxChannel = -1; // this series is done. Next time: restart with break.
     // get interrupt after this byte is actually transmitted
-    UCSRnB = (1<<TXENn) | (1<<TXCIEn);
+    // UCSRnB = (1 << TXENn) | (1 << TXCIEn);
+    _DMXSerialInit(Calcprescale(DMXSPEED), ((1 << TXENn) | (1 << TXCIEn)), DMXFORMAT);
   } // if
-#ifdef SCOPEDEBUG
-  digitalWrite(DmxISRPin, HIGH);
-#endif
+
 } // ISR(USARTn_UDRE_vect)
 
 // The End
