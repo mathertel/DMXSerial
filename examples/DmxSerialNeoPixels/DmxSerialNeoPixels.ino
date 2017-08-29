@@ -5,9 +5,9 @@
 // This work is licensed under a BSD style license. See http://www.mathertel.de/License.aspx
 //
 // Documentation and samples are available at http://www.mathertel.de/Arduino
-// 25.07.2011 creation of the DmxSerial library.
-// 10.07.2014 creation of example with NeoPixels
-// 04.09.2016 minor improvements and addes as an example to DMXSerial.
+// 06.09.2016 Creation of DmxSerialNeoPixels sample.
+// 27.08.2017 working with new DMXSerial DMXProbe mode.
+//            cleanup.
 
 // - - - - -
 
@@ -22,15 +22,13 @@ const int RedPin =    9;  // PWM output pin for Red Light.
 const int GreenPin =  6;  // PWM output pin for Green Light.
 const int BluePin =   5;  // PWM output pin for Blue Light.
 
-const int DebugPin =  10;  
-
 #define RedDefaultLevel   5 // 100
 #define GreenDefaultLevel 0 // 200
 #define BlueDefaultLevel  0 // 255
 
 // number of RGB neopixels, RGB channels are transfered
 // warning: try with 12 first and scale up carefully.
-#define PIXELS 8
+#define PIXELS 60
 
 // first DMX start address
 #define DMXSTART 1
@@ -47,12 +45,6 @@ void setup () {
   pinMode(RedPin,   OUTPUT); // sets the digital pin as output
   pinMode(GreenPin, OUTPUT);
   pinMode(BluePin,  OUTPUT);
-  
-  pinMode(DebugPin,  OUTPUT);
-
-  digitalWrite(10, 1);
-  delay(300);
-  digitalWrite(10, 0);
   
   DMXSerial.maxChannel(DMXLENGTH); // after 3 * pixel channels, the onUpdate will be called when new data arrived.
 
@@ -71,8 +63,7 @@ void setup () {
 } // setup ()
 
 
-
-// do something
+// do constantly fetch DMX data and update the neopixels.
 void loop() {
   // wait for an incomming DMX packet.
   DMXSerial.receive();
