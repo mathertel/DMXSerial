@@ -31,13 +31,16 @@
 #define DmxModeOut HIGH  // set the level to HIGH for outgoing data direction
 #define DmxModeIn  LOW   // set the level to LOW  for incomming data direction
 
+#define DMXPROBE_RECV_MAX 50 // standard maximum of waiting for a DMX packet in DMXPROBE mode.
+
 // ----- Enumerations -----
 
 // Mode of Operation
 typedef enum { 
   DMXNone, // unspecified
-  DMXController, // always sending
-  DMXReceiver    // always listening
+  DMXController , // always sending
+  DMXReceiver,   // always listening
+  DMXProbe       // send and receive upon request
 } DMXMode;
 
 // ----- Library Class -----
@@ -69,13 +72,18 @@ class DMXSerialClass
     // Calculate how long no data packet was received
     unsigned long noDataSince();
 
-    // attach function that will be called when new data was received.
-    void attachOnUpdate(dmxUpdateFunction newFunction);
-
-    // Calculate how long no data backet was received
+    // return true when some DMX data was updated since last resetUpdated() call or onUpdate callback.
     bool dataUpdated();
+
+    // reset DMX data update flag.
     void resetUpdated();
 
+    // actively wait for an incomming DMX packet.
+    bool receive();
+
+    // actively wait for an incomming DMX packet, specifying the maximal waiting time in msecs.
+    bool receive(uint8_t wait);
+    
     // Terminate operation.
     void    term       (void);
     
@@ -83,6 +91,8 @@ class DMXSerialClass
     // Not used.
     // all private information is in the global _dmxXXX variables for speed and code size optimization.
     // See DMXSerial.cpp.
+
+
 };
 
 // Use the DMXSerial library through the DMXSerial object.
