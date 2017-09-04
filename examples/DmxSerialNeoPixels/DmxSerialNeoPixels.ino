@@ -66,15 +66,21 @@ void setup () {
 // do constantly fetch DMX data and update the neopixels.
 void loop() {
   // wait for an incomming DMX packet.
-  DMXSerial.receive();
+  if (DMXSerial.receive()) {
+    analogWrite(RedPin,   DMXSerial.read(1));
+    analogWrite(GreenPin, DMXSerial.read(2));
+    analogWrite(BluePin,  DMXSerial.read(3));
+    updateNeopixel(DMXSerial.getBuffer() + DMXSTART, PIXELS);
 
-  // read recent DMX values 1..3 and set pwm levels
-  analogWrite(RedPin,   DMXSerial.read(1));
-  analogWrite(GreenPin, DMXSerial.read(2));
-  analogWrite(BluePin,  DMXSerial.read(3));
+  } else {
+    // don't update the Neopixels but signal a red.
+    analogWrite(RedPin,   100);
+    analogWrite(GreenPin, 0);
+    analogWrite(BluePin,  0);
+  } // if
   
-  updateNeopixel(DMXSerial.getBuffer() + DMXSTART, PIXELS);
 } // loop()
+
 
 // The End.
 

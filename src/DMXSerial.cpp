@@ -353,22 +353,37 @@ void DMXSerialClass::resetUpdated()
 
 
 // When mode is DMXProbe this function reads one DMX buffer and then returns.
-void DMXSerialClass::receive()
+// wait a meaningful time on a packet.
+// return true whan a packet has been received.
+bool DMXSerialClass::receive() {
+  return(receive(DMXPROBE_RECV_MAX));
+} // receive()
+
+
+// When mode is DMXProbe this function reads one DMX buffer and then returns.
+// wait approximately gives the number of msecs for waiting on a packet.
+// return true whan a packet has been received.
+bool DMXSerialClass::receive(uint8_t wait)
 {
+  bool ret = false;
+
   if (_dmxMode == DMXProbe) {
     _DMXStartReceiving();
      // UCSRnA
-    while (_dmxRecvState != DONE) {
-      delay(5);
+    while ((wait > 0) && (_dmxRecvState != DONE)) {
+      delay(1);
+      wait--;
     } // while
    
-    if ((_dmxData[1] == 0) && (_dmxData[2] == 0)) {
-      // digitalWrite(9, 1);
-      // delay(500);
-      // digitalWrite(9, 0);
-    }
+    if (_dmxRecvState == DONE) {
+      ret = true;
+    } else {
+      _DMXSerialInit(Calcprescale(DMXSPEED), (1 << RXENn), DMXFORMAT);
+    } // if
   } // if
-} // receive()
+  
+  return(ret);
+} // receive(wait)
 
 
 // Terminate operation

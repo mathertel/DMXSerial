@@ -31,6 +31,8 @@
 #define DmxModeOut HIGH  // set the level to HIGH for outgoing data direction
 #define DmxModeIn  LOW   // set the level to LOW  for incomming data direction
 
+#define DMXPROBE_RECV_MAX 50 // standard maximum of waiting for a DMX packet in DMXPROBE mode.
+
 // ----- Enumerations -----
 
 // Mode of Operation
@@ -77,8 +79,11 @@ class DMXSerialClass
     void resetUpdated();
 
     // actively wait for an incomming DMX packet.
-    void receive();
+    bool receive();
 
+    // actively wait for an incomming DMX packet, specifying the maximal waiting time in msecs.
+    bool receive(uint8_t wait);
+    
     // Terminate operation.
     void    term       (void);
     
