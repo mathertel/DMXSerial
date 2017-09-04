@@ -400,7 +400,7 @@ void DMXSerialClass::term(void)
 // Initialize the Hardware serial port with the given baud rate
 // using 8 data bits, no parity, 2 stop bits for data
 // and 8 data bits, even parity, 1 stop bit for the break
-inline void _DMXSerialInit(uint16_t baud_setting, uint8_t mode, uint8_t format)
+void _DMXSerialInit(uint16_t baud_setting, uint8_t mode, uint8_t format)
 {
   // assign the baud_setting to the USART Baud Rate Register
   UCSRnA = 0;                 // 04.06.2012: use normal speed operation

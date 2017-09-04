@@ -159,3 +159,5 @@ void updateNeopixel(uint8_t *ptr, uint8_t pixels) {
   // Just wait long enough without sending any bots to cause the pixels to latch and display the last sent frame
   _delay_us((RES / 1000UL) + 1);
 } // updateNeopixel()
+
+// End
