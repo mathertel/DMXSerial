@@ -6,26 +6,7 @@
 // This work is licensed under a BSD style license. See http://www.mathertel.de/License.aspx
 //
 // Documentation and samples are available at http://www.mathertel.de/Arduino
-// 25.07.2011 creation of the DMXSerial library.
-// 10.09.2011 fully control the serial hardware register
-//            without using the Arduino Serial (HardwareSerial) class to avoid ISR implementation conflicts.
-// 01.12.2011 include file changed to work with the Arduino 1.0 environment
-// 28.12.2011 unused variable DmxCount removed
-// 10.05.2012 added method noDataSince to check how long no packet was received
-// 04.06.2012: set UCSRnA = 0 to use normal speed operation
-// 30.07.2012 corrected TX timings with UDRE and TX interrupts
-//            fixed bug in 512-channel RX
-// 26.03.2013 #defines for the interrupt vector names
-//            auto-increase _dmxMaxChannel
-// 15.05.2013 Arduino Leonard and Arduino MEGA compatibility
-// 19.05.2013 ATmega8 compatibility (beta)
-// 24.08.2013 Optimizations for speed and size.
-//            Removed some "volatile" annotations. 
-// 19.03.2015 DMXModePin as parameter
-// 25.08.2016 SCOPEDEBUG removed.
-// 04.06.2017 Serial Initialization consolidated into _DMXSerialInit,
-//            _DMXStartSending and _DMXStartReceiving functions.
-// 27.08.2017 DMXProbe mode finished.
+// Changelog: See DMXSerial.h
 // - - - - -
 
 #include "Arduino.h"
@@ -227,8 +208,7 @@ void _DMXStartReceiving();
 
 // ----- Class implementation -----
 
-// (Re)Initialize the specified mode.
-// The mode parameter should be a value from enum DMXMode.
+// Initialize the specified mode.
 void DMXSerialClass::init(int mode)
 {
   init(mode, DMXMODEPIN);
@@ -339,7 +319,7 @@ unsigned long DMXSerialClass::noDataSince()
 } // noDataSince()
 
 
-// return true when some DMX data was updated since last resetUpdated() call or onUpdate callback.
+// return true when some DMX data was updated.
 bool DMXSerialClass::dataUpdated()
 {
   return(_dmxUpdated);
