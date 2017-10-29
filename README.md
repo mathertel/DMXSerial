@@ -1,8 +1,9 @@
 ## Overview
 
 This is a library for sending and receiving DMX codes using the Arduino plattform or a ATmega (ATmega168, ATmega328 or similar) processor with a clock speed of 16 MHz. 
-
 You can implement DMX devices and DMX controller with this library.
+
+The DMXSerialClass class implemets all the functionality.
 
 You can find more detail on this library at http://www.mathertel.de/Arduino/DMXSerial.aspx.
 
