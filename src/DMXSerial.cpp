@@ -458,7 +458,8 @@ ISR(USARTn_RX_vect)
     // break condition detected.
     _dmxRecvState = BREAK;
     _dmxDataPtr = _dmxData;
-    
+    _dmxRecvPos = 0;
+
   } else if (DmxState == BREAK) {
     // first byte after a break was read.
     if (DmxByte == 0) {
@@ -466,6 +467,7 @@ ISR(USARTn_RX_vect)
       _dmxRecvState = DATA;
       _dmxLastPacket = millis(); // remember current (relative) time in msecs.
       _dmxDataPtr++; // start saving data with channel # 1
+      _dmxRecvPos ++;
 
     } else {
       // This might be a RDM or customer DMX command -> not implemented so wait for next BREAK !
@@ -473,14 +475,17 @@ ISR(USARTn_RX_vect)
     } // if
 
   } else if (DmxState == DATA) {
-    // check for new data
-    if (*_dmxDataPtr != DmxByte) {
-      _dmxUpdated = true;
-      // store received data into dmx data buffer.
-      *_dmxDataPtr = DmxByte;
-    } // if
-    _dmxDataPtr++;
-    
+    if (_dmxRecvPos >= _dmxStartAddress){
+      // check for new data
+      if (*_dmxDataPtr != DmxByte) {
+        _dmxUpdated = true;
+        // store received data into dmx data buffer.
+        *_dmxDataPtr = DmxByte;
+      } // if
+      _dmxDataPtr++;
+  }
+  _dmxRecvPos++;
+
     if (_dmxDataPtr > _dmxDataLastPtr) {
       // all channels received.
       _dmxRecvState = DONE;
