@@ -173,9 +173,11 @@ typedef enum {
 
 DMXMode  _dmxMode;    // Mode of Operation
 int      _dmxModePin; // pin used for I/O direction.
+int     _dmxStartAddress = 1; //first Channel the reciver will listen to. Default is 1.
 
 uint8_t _dmxRecvState;  // Current State of receiving DMX Bytes
 int     _dmxChannel;  // the next channel byte to be sent.
+uint16_t _dmxRecvPos; //Next received Channel in one data Frame
 
 volatile unsigned int  _dmxMaxChannel = 32; // the last channel used for sending (1..32).
 volatile unsigned long _dmxLastPacket = 0; // the last time (using the millis function) a packet was received.
@@ -373,6 +375,12 @@ void DMXSerialClass::term(void)
   UCSRnB = 0;
 } // term()
 
+//sets the first Channel the reciver will listen to
+void DMXSerialClass::setStartAddress(int channel){
+  if (channel < 1) channel = 1;
+  if channel > 512) channel = 512;
+  _dmxStartAddress = channel;
+}
 
 // ----- internal functions and interrupt implementations -----
 

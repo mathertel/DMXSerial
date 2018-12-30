@@ -28,6 +28,7 @@
 //            _DMXStartSending and _DMXStartReceiving functions.
 // 27.08.2017 DMXProbe mode finished.
 // 29.10.2017 documentation.
+// 30.12.2018 included DMX start address on reciving data.
 // - - - - -
 
 #ifndef DmxSerial_h
@@ -164,7 +165,12 @@ class DMXSerialClass
      * @brief Terminate the current operation mode.
      */
     void    term();
-    
+
+    /**
+    * @brief sets the first channel the reciver is listening and storing to.
+    */
+    void setStartAddress(int channel);
+
   private:
     // Not used.
     // all private information is in the global _dmxXXX variables for speed and code size optimization.
