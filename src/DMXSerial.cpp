@@ -443,7 +443,9 @@ inline void _DMXSerialWriteByte(uint8_t data)
 // In DMXController mode this interrupt is disabled and will not occur.
 // In DMXReceiver mode when a byte was received it is stored to the dmxData buffer.
 ISR(USARTn_RX_vect)
-{
+  {
+  while(UCSRnA & (1 << RXCn)){ //while ther is data in the USART buffer
+
   uint8_t  USARTstate = UCSRnA;    // get state before data!
   uint8_t  DmxByte    = UDRn;	   // get data
   uint8_t  DmxState   = _dmxRecvState;	//just load once from SRAM to increase speed
@@ -499,14 +501,14 @@ ISR(USARTn_RX_vect)
       // continue listening without interrupts
        _DMXSerialInit(Calcprescale(DMXSPEED), (1 << RXENn), DMXFORMAT);
       //UCSRnB = (1 << RXENn);
-      
-      
+
+
     } else {
       // continue on DMXReceiver mode.
       _dmxRecvState = IDLE;	// wait for next break
     }
   } // if
-  
+} // while
 } // ISR(USARTn_RX_vect)
 
 
