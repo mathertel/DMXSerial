@@ -378,7 +378,7 @@ void DMXSerialClass::term(void)
 //sets the first Channel the reciver will listen to
 void DMXSerialClass::setStartAddress(int channel){
   if (channel < 1) channel = 1;
-  if channel > 512) channel = 512;
+  if (channel > 512) channel = 512;
   _dmxStartAddress = channel;
 }
 
