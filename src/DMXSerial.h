@@ -29,6 +29,8 @@
 // 27.08.2017 DMXProbe mode finished.
 // 29.10.2017 documentation.
 // 30.12.2018 included DMX start address on reciving data.
+// 30.12.2018 the buffer is now completly read when the RX interrupt occurs.
+//            This allows the usage of multiple ws8212 LEDs.
 // - - - - -
 
 #ifndef DmxSerial_h
