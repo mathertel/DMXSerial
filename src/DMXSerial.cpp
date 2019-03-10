@@ -173,9 +173,11 @@ typedef enum {
 
 DMXMode  _dmxMode;    // Mode of Operation
 int      _dmxModePin; // pin used for I/O direction.
+int     _dmxStartAddress = 1; //first Channel the reciver will listen to. Default is 1.
 
 uint8_t _dmxRecvState;  // Current State of receiving DMX Bytes
 int     _dmxChannel;  // the next channel byte to be sent.
+uint16_t _dmxRecvPos; //Next received Channel in one data Frame
 
 volatile unsigned int  _dmxMaxChannel = 32; // the last channel used for sending (1..32).
 volatile unsigned long _dmxLastPacket = 0; // the last time (using the millis function) a packet was received.
@@ -373,6 +375,12 @@ void DMXSerialClass::term(void)
   UCSRnB = 0;
 } // term()
 
+//sets the first Channel the reciver will listen to
+void DMXSerialClass::setStartAddress(int channel){
+  if (channel < 1) channel = 1;
+  if (channel > 512) channel = 512;
+  _dmxStartAddress = channel;
+}
 
 // ----- internal functions and interrupt implementations -----
 
@@ -435,7 +443,9 @@ inline void _DMXSerialWriteByte(uint8_t data)
 // In DMXController mode this interrupt is disabled and will not occur.
 // In DMXReceiver mode when a byte was received it is stored to the dmxData buffer.
 ISR(USARTn_RX_vect)
-{
+  {
+  while(UCSRnA & (1 << RXCn)){ //while ther is data in the USART buffer
+
   uint8_t  USARTstate = UCSRnA;    // get state before data!
   uint8_t  DmxByte    = UDRn;	   // get data
   uint8_t  DmxState   = _dmxRecvState;	//just load once from SRAM to increase speed
@@ -450,7 +460,8 @@ ISR(USARTn_RX_vect)
     // break condition detected.
     _dmxRecvState = BREAK;
     _dmxDataPtr = _dmxData;
-    
+    _dmxRecvPos = 0;
+
   } else if (DmxState == BREAK) {
     // first byte after a break was read.
     if (DmxByte == 0) {
@@ -458,6 +469,7 @@ ISR(USARTn_RX_vect)
       _dmxRecvState = DATA;
       _dmxLastPacket = millis(); // remember current (relative) time in msecs.
       _dmxDataPtr++; // start saving data with channel # 1
+      _dmxRecvPos ++;
 
     } else {
       // This might be a RDM or customer DMX command -> not implemented so wait for next BREAK !
@@ -465,14 +477,17 @@ ISR(USARTn_RX_vect)
     } // if
 
   } else if (DmxState == DATA) {
-    // check for new data
-    if (*_dmxDataPtr != DmxByte) {
-      _dmxUpdated = true;
-      // store received data into dmx data buffer.
-      *_dmxDataPtr = DmxByte;
-    } // if
-    _dmxDataPtr++;
-    
+    if (_dmxRecvPos >= _dmxStartAddress){
+      // check for new data
+      if (*_dmxDataPtr != DmxByte) {
+        _dmxUpdated = true;
+        // store received data into dmx data buffer.
+        *_dmxDataPtr = DmxByte;
+      } // if
+      _dmxDataPtr++;
+  }
+  _dmxRecvPos++;
+
     if (_dmxDataPtr > _dmxDataLastPtr) {
       // all channels received.
       _dmxRecvState = DONE;
@@ -486,14 +501,14 @@ ISR(USARTn_RX_vect)
       // continue listening without interrupts
        _DMXSerialInit(Calcprescale(DMXSPEED), (1 << RXENn), DMXFORMAT);
       //UCSRnB = (1 << RXENn);
-      
-      
+
+
     } else {
       // continue on DMXReceiver mode.
       _dmxRecvState = IDLE;	// wait for next break
     }
   } // if
-  
+} // while
 } // ISR(USARTn_RX_vect)
 
 

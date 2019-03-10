@@ -1,5 +1,7 @@
 = DMX Library for Arduino =
 
+Improved to enable the usage of Neopixels and reduce Memory usage.
+
 This is a library for sending and receiving DMX codes using the Arduino plattform
 or a ATmega (ATmega168, ATmega328 or similar) processor with a clock speed of 16 MHz. 
 
