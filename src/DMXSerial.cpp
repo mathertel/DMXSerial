@@ -23,7 +23,8 @@
 // This is consistent to the Layout of the Arduino DMX Shield http://www.mathertel.de/Arduino/DMXShield.aspx.
 
 // For using the serial port 1 on a Arduino MEGA 2560 board, enable the following DMX_USE_PORT1 definition.
-// #define DMX_USE_PORT1
+// Otherwise, disable back the definition below.
+#define DMX_USE_PORT1
 
 #if !defined(DMX_USE_PORT1) && defined(USART_RXC_vect)
 // These definitions are used on ATmega8 boards
