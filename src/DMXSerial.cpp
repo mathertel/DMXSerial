@@ -146,7 +146,17 @@
 // 100000 bit/sec is good: gives 100 usec break and 16 usec MAB
 // 1990 spec says transmitter must send >= 92 usec break and >= 12 usec MAB
 // receiver must accept 88 us break and 8 us MAB
-#define BREAKSPEED     100000
+//#define BREAKSPEED     100000
+// When using the original break speed (commented above), we saw two problems:
+// 1. Some of the lighting responds with a delay (sometimes 1+ sec!).
+// 2. Response isn't smooth - even a slow smooth update of the values causes
+//    sharp step-like updates in fixed intervals.
+// With slower values we saw some flickering (which may happen if the light
+// thinks no messages are sent, a case in which we know it starts fading to
+// black). So we increased the break speed as much as possible while the
+// messages were still recognized, to reduce the flickering. This also
+// reduced the latency and removed the sharp updates (not 100% sure why).
+#define BREAKSPEED     220000
 #define DMXSPEED       250000
 #define BREAKFORMAT    SERIAL_8E1
 #define DMXFORMAT      SERIAL_8N2
@@ -209,7 +219,8 @@ void _DMXStartReceiving();
 
 // ----- Class implementation -----
 
-// Initialize the specified mode.
+// (Re)Initialize the specified mode.
+// The mode parameter should be a value from enum DMXMode.
 void DMXSerialClass::init(int mode)
 {
   init(mode, DMXMODEPIN);
@@ -320,7 +331,7 @@ unsigned long DMXSerialClass::noDataSince()
 } // noDataSince()
 
 
-// return true when some DMX data was updated.
+// return true when some DMX data was updated since last resetUpdated() call or onUpdate callback.
 bool DMXSerialClass::dataUpdated()
 {
   return(_dmxUpdated);
