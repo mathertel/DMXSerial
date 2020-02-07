@@ -28,6 +28,7 @@
 //            _DMXStartSending and _DMXStartReceiving functions.
 // 27.08.2017 DMXProbe mode finished.
 // 29.10.2017 documentation.
+// 07.02.2020 Refactored to support multiple hardware layers.
 // - - - - -
 
 #ifndef DmxSerial_h
@@ -56,6 +57,7 @@ typedef enum {
   DMXReceiver,   // always listening
   DMXProbe       // send and receive upon request
 } DMXMode;
+
 
 // ----- Library Class -----
 
