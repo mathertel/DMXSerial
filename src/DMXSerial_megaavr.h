@@ -23,9 +23,11 @@ int32_t _DMX_dmxDivider; // BAUD Devider factor for DMX speed.
 int32_t _DMX_breakDivider; // BAUD Devider factor for BREAK speed.
 
 
-#define DBG(k, v)  \
-  Serial.print(k); \
-  Serial.println(v);
+// #define DBG(k, v)  \
+//   Serial.print(k); \
+//   Serial.println(v);
+
+#define DBG(k, v) 
 
 
 /// Initialize the Hardware MUX and UART serial port.
@@ -33,10 +35,10 @@ void _DMX_init()
 {
 
   //Initialize serial and wait for port to open:
-  Serial.begin(115200);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
+  // Serial.begin(115200);
+  // while (!Serial) {
+  //   ; // wait for serial port to connect. Needed for native USB port only
+  // }
 
   int32_t baud;
 
@@ -64,9 +66,8 @@ void _DMX_init()
   // Setup port mux
   PORTMUX.USARTROUTEA |= PORTMUX_USART1_ALT1_gc;
 
-  // Disable CLK2X
-  (USART1).CTRLB &= (~USART_RXMODE_CLK2X_gc);
-  (USART1).CTRLB |= USART_RXMODE_NORMAL_gc;
+  // Disable CLK2X, clock normal rate
+  (USART1).CTRLB = USART_RXMODE_NORMAL_gc;
 
   //Set up the rx & tx pins
   pinMode(PIN_WIRE_HWSERIAL1_RX, INPUT_PULLUP);
@@ -76,7 +77,7 @@ void _DMX_init()
   // enable interrupts again, restore SREG content
   SREG = oldSREG;
 
-  Serial.println("Initialized.");
+  // Serial.println("Initialized.");
 } // _DMX_init()
 
 
