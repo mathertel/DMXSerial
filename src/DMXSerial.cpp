@@ -9,8 +9,8 @@
 // Changelog: See DMXSerial.h
 // - - - - -
 
-#include "Arduino.h"
 #include "DMXSerial.h"
+#include "Arduino.h"
 
 
 // ----- forwards -----
@@ -23,10 +23,12 @@ void _DMXStartReceiving();
 
 
 // register interrupt for receiving data and frameerrors that calls _DMXReceived()
-void _DMXReceived(uint8_t framerror, uint8_t data);
+void _DMXReceived(uint8_t data, uint8_t framerror);
+void _DMXTransmitted();
+
 
 // These functions all exist in the processor specific implementations:
-void _DMX_initUART();
+void _DMX_init();
 void _DMX_setMode();
 void _DMX_writeByte(uint8_t data);
 void _DMX_flush();
@@ -56,8 +58,9 @@ typedef enum {
 // receiver must accept 88 us break and 8 us MAB
 #define BREAKSPEED 100000L
 #define DMXSPEED 250000L
+
 #define BREAKFORMAT SERIAL_8E1
-#define DMXFORMAT SERIAL_8N2
+#define DMXFORMAT SERIAL_8N1
 
 
 // ----- include processor specific definitions and functions.
@@ -148,7 +151,7 @@ void DMXSerialClass::init(int mode, int dmxModePin)
   if ((_dmxMode == DMXController) || (_dmxMode == DMXReceiver) || (_dmxMode == DMXProbe)) {
     // a valid mode was given
     // Setup external mode signal
-    _DMX_initUART();
+    _DMX_init();
 
     pinMode(_dmxModePin, OUTPUT); // enables the pin for output to control data direction
     digitalWrite(_dmxModePin, DmxModeIn); // data in direction, to avoid problems on the DMX line for now.
@@ -336,11 +339,10 @@ void _DMXStartReceiving()
 } // _DMXStartReceiving()
 
 
-// This Interrupt Service Routine is called when a byte or frame error was received.
+// This function is called by the Interrupt Service Routine when a byte or frame error was received.
 // In DMXController mode this interrupt is disabled and will not occur.
 // In DMXReceiver mode when a byte was received it is stored to the dmxData buffer.
-///
-void _DMXReceived(uint8_t framerror, uint8_t data)
+void _DMXReceived(uint8_t data, uint8_t framerror)
 {
   uint8_t DmxState = _dmxRecvState; //just load once from SRAM to increase speed
 
@@ -397,28 +399,23 @@ void _DMXReceived(uint8_t framerror, uint8_t data)
 } // _DMXReceived()
 
 
-// Interrupt service routines that are called when the actual byte was sent.
-// When changing speed (for sending break and sending start code) we use TX finished interrupt
-// which occurs shortly after the last stop bit is sent
-// When staying at the same speed (sending data bytes) we use data register empty interrupt
-// which occurs shortly after the start bit of the *previous* byte
+// This function is called by the Transmission complete or Data Register empty interrupt routine.
+// When changing speed (after sending BREAK) we use TX finished interrupt that occurs shortly after the last stop bit is sent
+// When staying at the same speed (sending data bytes) we use data register empty interrupt that occurs shortly after the start bit of the *previous* byte
 // When sending a DMX sequence it just takes the next channel byte and sends it out.
 // In DMXController mode when the buffer was sent completely the DMX sequence will resent, starting with a BREAK pattern.
 // In DMXReceiver mode this interrupt is disabled and will not occur.
-
-
-ISR(USARTn_TX_vect)
+void _DMXTransmitted()
 {
   if ((_dmxMode == DMXController) && (_dmxChannel == -1)) {
-    // this interrupt occurs after the stop bits of the last data byte
+    // this occurs after the stop bits of the last data byte
     // start sending a BREAK and loop forever in ISR
     _DMX_setMode(DMXUARTMode::TBREAK);
     _DMX_writeByte((uint8_t)0);
-    _dmxChannel = 0;
+    _dmxChannel = 0; // next time send start byte
 
   } else if (_dmxChannel == 0) {
-    // this interrupt occurs after the stop bits of the break byte
-
+    // this occurs after the stop bits of the break byte
     // now back to DMX speed: 250000baud
     // take next interrupt when data register empty (early)
     _DMX_setMode(DMXUARTMode::TDATA);
@@ -426,20 +423,17 @@ ISR(USARTn_TX_vect)
     // write start code
     _DMX_writeByte((uint8_t)0);
     _dmxChannel = 1;
+
+  } else {
+    _DMX_writeByte(_dmxData[_dmxChannel++]);
+
+    if (_dmxChannel > _dmxMaxChannel) {
+      _dmxChannel = -1; // this series is done. Next time: restart with break.
+      _DMX_setMode(DMXUARTMode::TDONE);
+    } // if
+
   } // if
-} // ISR(USARTn_TX_vect)
-
-
-// this interrupt occurs after the start bit of the previous data byte
-ISR(USARTn_UDRE_vect)
-{
-  _DMX_writeByte(_dmxData[_dmxChannel++]);
-
-  if (_dmxChannel > _dmxMaxChannel) {
-    _dmxChannel = -1; // this series is done. Next time: restart with break.
-    _DMX_setMode(DMXUARTMode::TDONE);
-  } // if
-} // ISR(USARTn_UDRE_vect)
+} // _DMXTransmitted
 
 
 // The End

@@ -1,23 +1,35 @@
-// DMX HAL for MEGAAVR Architecture
+// - - - - -
+// DMXSerial - A Arduino library for sending and receiving DMX using the builtin serial hardware port.
+// DMXSerial_magaavr.h: Hardware specific functions for MEGAAVR processors like 4809 used in Aurduino Every.
 
+// Copyright (c) 2011-2020 by Matthias Hertel, http://www.mathertel.de
+// This work is licensed under a BSD style license. See http://www.mathertel.de/License.aspx
+// - - - - -
+
+// global variables and functions are prefixed with "_DMX_"
 
 // ----- MegAVR specific Hardware abstraction functions -----
+
+#ifndef DMXSERIAL_MEGAAVR_H
+#define DMXSERIAL_MEGAAVR_H
+
 
 #include "Arduino.h"
 #include "DMXSerial.h"
 #include "avr/io.h"
 
 
-int32_t _dmx_divider;
-int32_t _break_divider;
+int32_t _DMX_dmxDivider; // BAUD Devider factor for DMX speed.
+int32_t _DMX_breakDivider; // BAUD Devider factor for BREAK speed.
+
 
 #define DBG(k, v)  \
   Serial.print(k); \
   Serial.println(v);
 
 
-/// Initialize the Hardware UART serial port.
-void _DMX_initUART()
+/// Initialize the Hardware MUX and UART serial port.
+void _DMX_init()
 {
 
   //Initialize serial and wait for port to open:
@@ -35,15 +47,15 @@ void _DMX_initUART()
   baud = (DMXSPEED * (1024 + oscErr)) / 1024;
   DBG("DMX Baud Rate adjusted:", baud);
 
-  _dmx_divider = (64 * F_CPU) / (16 * baud);
-  DBG("DMX Divider:", _dmx_divider);
+  _DMX_dmxDivider = (64 * F_CPU) / (16 * baud);
+  DBG("DMX Divider:", _DMX_dmxDivider);
 
   // calculate BREAK speed Divider
   baud = (BREAKSPEED * (1024 + oscErr)) / 1024;
   DBG("BREAK Baud Rate adjusted:", baud);
 
-  _break_divider = (64 * F_CPU) / (16 * baud);
-  DBG("BREAK Divider:", _break_divider);
+  _DMX_breakDivider = (64 * F_CPU) / (16 * baud);
+  DBG("BREAK Divider:", _DMX_breakDivider);
 
   // disable interrupts during initialization
   uint8_t oldSREG = SREG;
@@ -65,7 +77,7 @@ void _DMX_initUART()
   SREG = oldSREG;
 
   Serial.println("Initialized.");
-} // _DMX_initUART()
+} // _DMX_init()
 
 
 /// Initialize the Hardware UART serial port to the required mode.
@@ -75,50 +87,45 @@ void _DMX_setMode(DMXUARTMode mode)
   uint8_t flags;
   uint8_t format;
 
+  // disable interrupts during initialization
   uint8_t oldSREG = SREG;
   cli();
 
   if (mode == DMXUARTMode::OFF) {
     // Disable transmitter and receiver
-    (USART1).CTRLB |= USART_RXEN_bm; // (USART_RXEN_bm | USART_TXEN_bm);
+    (USART1).CTRLB = USART_RXMODE_NORMAL_gc; // (USART_RXEN_bm | USART_TXEN_bm);
+    (USART1).CTRLA = 0; // disable all interrupts
 
   } else if (mode == DMXUARTMode::RONLY) {
-    // baud_setting = CalcPreScale(DMXSPEED);
-    // flags = (1 << RXENn);
-    // format = DMXFORMAT;
+    (USART1).BAUD = (int16_t)_DMX_dmxDivider; // assign the baud_divider, a.k.a. BAUD (USART Baud Rate Register)
+    (USART1).CTRLC = SERIAL_8N1; // Set USART mode of operation
+    (USART1).CTRLB = USART_RXEN_bm | USART_RXMODE_NORMAL_gc; // Enable receiver only, normal speed
+    (USART1).CTRLA = 0; // disable all interrupts
 
   } else if (mode == DMXUARTMode::RDATA) {
-    // disable interrupts during initialization
-
-    // assign the baud_divider, a.k.a. BAUD (USART Baud Rate Register)
-    (USART1).BAUD = (int16_t)_dmx_divider;
-
-    // Set USART mode of operation
-    (USART1).CTRLC = SERIAL_8N1;
-
-    // Enable transmitter and receiver
-    (USART1).CTRLB |= USART_RXEN_bm; // (USART_RXEN_bm | USART_TXEN_bm);
-
-    // enable interrupts
-    (USART1).CTRLA |= USART_RXCIE_bm;
+    (USART1).BAUD = (int16_t)_DMX_dmxDivider; // assign the baud_divider, a.k.a. BAUD (USART Baud Rate Register)
+    (USART1).CTRLC = SERIAL_8N1; // Set USART mode of operation
+    (USART1).CTRLB = USART_RXEN_bm | USART_RXMODE_NORMAL_gc; // Enable receiver only, normal speed
+    (USART1).CTRLA = USART_RXCIE_bm; // enable receive complete interrupt
 
   } else if (mode == DMXUARTMode::TBREAK) {
-    // baud_setting = CalcPreScale(BREAKSPEED);
-    // flags = ((1 << TXENn) | (1 << TXCIEn));
-    // format = BREAKFORMAT;
+    (USART1).BAUD = (int16_t)_DMX_breakDivider; // assign the baud_divider, a.k.a. BAUD (USART Baud Rate Register)
+    (USART1).CTRLC = SERIAL_8E1; // Set USART mode of operation
+    (USART1).CTRLB = USART_TXEN_bm | USART_RXMODE_NORMAL_gc; // Enable transmitter only, normal speed
+    (USART1).CTRLA = USART_TXCIE_bm; // enable transmit complete interrupt
 
   } else if (mode == DMXUARTMode::TDATA) {
-    // baud_setting = CalcPreScale(DMXSPEED);
-    // flags = ((1 << TXENn) | (1 << UDRIEn));
-    // format = DMXFORMAT;
+    (USART1).BAUD = (int16_t)_DMX_dmxDivider; // assign the baud_divider, a.k.a. BAUD (USART Baud Rate Register)
+    (USART1).CTRLC = SERIAL_8N1; // Set USART mode of operation
+    (USART1).CTRLB = USART_TXEN_bm | USART_RXMODE_NORMAL_gc; // Enable transmitter only, normal speed
+    (USART1).CTRLA = USART_DREIE_bm; // enable data register empty interrupt
 
   } else if (mode == DMXUARTMode::TDONE) {
-    // baud_setting = CalcPreScale(DMXSPEED);
-    // flags = ((1 << TXENn) | (1 << TXCIEn));
-    // format = DMXFORMAT;
+    (USART1).BAUD = (int16_t)_DMX_dmxDivider; // assign the baud_divider, a.k.a. BAUD (USART Baud Rate Register)
+    (USART1).CTRLC = SERIAL_8N1; // Set USART mode of operation
+    (USART1).CTRLB = USART_TXEN_bm | USART_RXMODE_NORMAL_gc; // Enable transmitter only, normal speed
+    (USART1).CTRLA = USART_TXCIE_bm; // enable transmit complete interrupt
   } // if
-
-  // now set the registers:
 
   // enable interrupts again, restore SREG content
   SREG = oldSREG;
@@ -135,8 +142,8 @@ void _DMX_flush()
 // send the next byte after current byte was sent completely.
 inline void _DMX_writeByte(uint8_t data)
 {
-  // putting data into buffer sends the data
-  // UDRn = data;
+  // putting data into TXDATAL sends the data
+  (USART1).TXDATAL = data;
 } // _DMX_writeByte
 
 
@@ -147,5 +154,21 @@ ISR(USART1_RXC_vect)
 {
   register8_t rxferr = (USART1).RXDATAH & USART_FERR_bm;
   register8_t rxdata = (USART1).RXDATAL;
-  _DMXReceived(rxferr, rxdata);
+  _DMXReceived(rxdata, rxferr);
 } // ISR(USART1_RXC_vect)
+
+
+// Interrupt service routines that are called when the actual byte was sent.
+ISR(USART1_TXC_vect)
+{
+  _DMXTransmitted();
+} // ISR(USART1_TXC_vect)
+
+
+// this interrupt occurs after data register was emptied by handing it over to the shift register.
+ISR(USART1_DRE_vect)
+{
+  _DMXTransmitted();
+} // ISR(USART1_DRE_vect)
+
+#endif

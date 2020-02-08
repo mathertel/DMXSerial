@@ -1,11 +1,21 @@
 // - - - - -
 // DMXSerial - A Arduino library for sending and receiving DMX using the builtin serial hardware port.
 // DMXSerial_avr.h: Hardware specific functions for AVR processors like ATmega168p used in Aurduino UNO.
-// 
+//
 // Copyright (c) 2011-2020 by Matthias Hertel, http://www.mathertel.de
 // This work is licensed under a BSD style license. See http://www.mathertel.de/License.aspx
 // - - - - -
 
+// global variables and functions are prefixed with "_DMX_"
+
+// ----- MegAVR specific Hardware abstraction functions -----
+
+#ifndef DMXSERIAL_AVR_H
+#define DMXSERIAL_AVR_H
+
+#include "Arduino.h"
+#include "DMXSerial.h"
+#include "avr/io.h"
 
 // ----- Constants -----
 
@@ -127,76 +137,61 @@
 #endif
 
 
-// formats for serial transmission
-
-#define SERIAL_8N1 ((0 << USBSn) | (0 << UPMn0) | (3 << UCSZn0))
-#define SERIAL_8N2 ((1 << USBSn) | (0 << UPMn0) | (3 << UCSZn0))
-#define SERIAL_8E1 ((0 << USBSn) | (2 << UPMn0) | (3 << UCSZn0))
-#define SERIAL_8E2 ((1 << USBSn) | (2 << UPMn0) | (3 << UCSZn0))
-
-
 // ----- ATMega specific Hardware abstraction functions -----
 
 // calculate prescaler from baud rate and cpu clock rate at compile time
 // nb implements rounding of ((clock / 16) / baud) - 1 per atmega datasheet
 #define CalcPreScale(B) (((((F_CPU) / 8) / (B)) - 1) / 2)
 
-void _DMX_initUART()
+const int32_t _DMX_dmxPreScale = CalcPreScale(DMXSPEED); // BAUD prescale factor for DMX speed.
+const int32_t _DMX_breakPreScale = CalcPreScale(BREAKSPEED); // BAUD prescale factor for BREAK speed.
+
+void _DMX_init()
 {
-  // Serial.println("Initialized.");
-}
-
-/// Initialize the Hardware UART serial port to the required mode.
-void _DMX_setMode(DMXUARTMode mode)
-{
-  uint16_t baud_setting;
-  uint8_t flags;
-  uint8_t format;
-
-  if (mode == DMXUARTMode::OFF) {
-    UCSRnB = 0;
-    return;
-
-  } else if (mode == DMXUARTMode::RONLY) {
-    baud_setting = CalcPreScale(DMXSPEED);
-    flags = (1 << RXENn);
-    format = DMXFORMAT;
-
-  } else if (mode == DMXUARTMode::RDATA) {
-    baud_setting = CalcPreScale(DMXSPEED);
-    flags = (1 << RXENn) | (1 << RXCIEn);
-    format = DMXFORMAT;
-
-  } else if (mode == DMXUARTMode::TBREAK) {
-    baud_setting = CalcPreScale(BREAKSPEED);
-    flags = ((1 << TXENn) | (1 << TXCIEn));
-    format = BREAKFORMAT;
-
-  } else if (mode == DMXUARTMode::TDATA) {
-    baud_setting = CalcPreScale(DMXSPEED);
-    flags = ((1 << TXENn) | (1 << UDRIEn));
-    format = DMXFORMAT;
-
-  } else if (mode == DMXUARTMode::TDONE) {
-    baud_setting = CalcPreScale(DMXSPEED);
-    flags = ((1 << TXENn) | (1 << TXCIEn));
-    format = DMXFORMAT;
-  } // if
-
-  // now set the registers:
-
   // 04.06.2012: use normal speed operation
   UCSRnA = 0;
+}
 
-  // assign the baud_setting to the USART Baud Rate Register
-  UBRRnH = baud_setting >> 8;
-  UBRRnL = baud_setting;
 
-  // enable USART functions RX, TX, Interrupts
-  UCSRnB = flags;
+/// Initialize the Hardware UART serial port registers to the required mode.
+void _DMX_setMode(DMXUARTMode mode)
+{
+  if (mode == DMXUARTMode::OFF) {
+    UCSRnB = 0;
 
-  // stop bits and character size
-  UCSRnC = format;
+  } else if (mode == DMXUARTMode::RONLY) {
+    // assign the baud_setting to the USART Baud Rate Register
+    UBRRnH = _DMX_dmxPreScale >> 8;
+    UBRRnL = _DMX_dmxPreScale;
+    // enable USART functions RX, TX, Interrupts
+    UCSRnB = (1 << RXENn);
+    // stop bits and character size
+    UCSRnC = SERIAL_8N1;
+
+  } else if (mode == DMXUARTMode::RDATA) {
+    UBRRnH = _DMX_dmxPreScale >> 8;
+    UBRRnL = _DMX_dmxPreScale;
+    UCSRnB = (1 << RXENn) | (1 << RXCIEn);
+    UCSRnC = SERIAL_8N1;
+
+  } else if (mode == DMXUARTMode::TBREAK) {
+    UBRRnH = _DMX_breakPreScale >> 8;
+    UBRRnL = _DMX_breakPreScale;
+    UCSRnB = ((1 << TXENn) | (1 << TXCIEn));
+    UCSRnC = SERIAL_8E1;
+
+  } else if (mode == DMXUARTMode::TDATA) {
+    UBRRnH = _DMX_dmxPreScale >> 8;
+    UBRRnL = _DMX_dmxPreScale;
+    UCSRnB = ((1 << TXENn) | (1 << UDRIEn));
+    UCSRnC = SERIAL_8N1;
+
+  } else if (mode == DMXUARTMode::TDONE) {
+    UBRRnH = _DMX_dmxPreScale >> 8;
+    UBRRnL = _DMX_dmxPreScale;
+    UCSRnB = ((1 << TXENn) | (1 << TXCIEn));
+    UCSRnC = SERIAL_8N1;
+  } // if
 } // _DMX_setMode()
 
 
@@ -223,7 +218,24 @@ inline void _DMX_writeByte(uint8_t data)
 // In DMXReceiver mode when a byte or frame error was received
 ISR(USARTn_RX_vect)
 {
-  uint8_t USARTstate = UCSRnA; // get state before data!
-  uint8_t DmxByte = UDRn; // get data
-  _DMXReceived(USARTstate & (1 << FEn), DmxByte);
+  uint8_t rxferr = (UCSRnA & (1 << FEn)); // get state before data!
+  uint8_t rxdata = UDRn; // get data
+  _DMXReceived(rxdata, rxferr);
 } // ISR(USARTn_RX_vect)
+
+
+// Interrupt service routines that are called when the actual byte was sent.
+ISR(USARTn_TX_vect)
+{
+  _DMXTransmitted();
+} // ISR(USARTn_TX_vect)
+
+
+// this interrupt occurs after data register was emptied by handing it over to the shift register.
+ISR(USARTn_UDRE_vect)
+{
+  _DMXTransmitted();
+} // ISR(USARTn_UDRE_vect)
+
+
+#endif
