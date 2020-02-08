@@ -9,18 +9,14 @@
 // Changelog: See DMXSerial.h
 // - - - - -
 
-#include "DMXSerial.h"
 #include "Arduino.h"
+#include "DMXSerial.h"
 
 
 // ----- forwards -----
 
-// void _DMXSerialInit(uint16_t baud_setting, uint8_t mode, uint8_t format);
-// inline void _DMX_writeByte(uint8_t data);
-
 void _DMXStartSending();
 void _DMXStartReceiving();
-
 
 // register interrupt for receiving data and frameerrors that calls _DMXReceived()
 void _DMXReceived(uint8_t data, uint8_t framerror);
@@ -32,8 +28,6 @@ void _DMX_init();
 void _DMX_setMode();
 void _DMX_writeByte(uint8_t data);
 void _DMX_flush();
-
-// _DMXSerialWrite
 
 
 // ----- Serial UART Modes -----
@@ -51,13 +45,15 @@ typedef enum {
 } __attribute__((packed)) DMXUARTMode;
 
 
+// Baud rate for DMX protocol
+#define DMXSPEED 250000L
+
 // the break timing is 10 bits (start + 8 data + parity) of this speed
 // the mark-after-break is 1 bit of this speed plus approx 6 usec
 // 100000 bit/sec is good: gives 100 usec break and 16 usec MAB
 // 1990 spec says transmitter must send >= 92 usec break and >= 12 usec MAB
 // receiver must accept 88 us break and 8 us MAB
 #define BREAKSPEED 100000L
-#define DMXSPEED 250000L
 
 #define BREAKFORMAT SERIAL_8E1
 #define DMXFORMAT SERIAL_8N1
@@ -297,21 +293,6 @@ void DMXSerialClass::term(void)
 
 
 // ----- internal functions and interrupt implementations -----
-
-
-// void _DMXSerialInit(uint16_t baud_setting, uint8_t mode, uint8_t format)
-// {
-//   // assign the baud_setting to the USART Baud Rate Register
-//   UCSRnA = 0; // 04.06.2012: use normal speed operation
-//   UBRRnH = baud_setting >> 8;
-//   UBRRnL = baud_setting;
-
-//   // enable USART functions RX, TX, Interrupts
-//   UCSRnB = mode;
-
-//   // 2 stop bits and 8 bit character size, no parity
-//   UCSRnC = format;
-// } // _DMXSerialInit
 
 
 // Setup Hardware for Sending
