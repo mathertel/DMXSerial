@@ -1,6 +1,6 @@
 // - - - - -
 // DMXSerial - A Arduino library for sending and receiving DMX using the builtin serial hardware port.
-// DMXSerial_magaavr.h: Hardware specific functions for MEGAAVR processors like 4809 used in Aurduino Every.
+// DMXSerial_magaavr.h: Hardware specific functions for MEGAAVR processors like 4809 used in Arduino Every.
 
 // Copyright (c) 2011-2020 by Matthias Hertel, http://www.mathertel.de
 // This work is licensed under a BSD style license. See http://www.mathertel.de/License.aspx
@@ -23,41 +23,20 @@ int32_t _DMX_dmxDivider; // BAUD Devider factor for DMX speed.
 int32_t _DMX_breakDivider; // BAUD Devider factor for BREAK speed.
 
 
-// #define DBG(k, v)  \
-//   Serial.print(k); \
-//   Serial.println(v);
-
-#define DBG(k, v) 
-
-
 /// Initialize the Hardware MUX and UART serial port.
 void _DMX_init()
 {
-
-  //Initialize serial and wait for port to open:
-  // Serial.begin(115200);
-  // while (!Serial) {
-  //   ; // wait for serial port to connect. Needed for native USB port only
-  // }
-
   int32_t baud;
 
   int8_t oscErr = SIGROW.OSC16ERR5V;
-  DBG("SIGROW.OSC16ERR5V:", oscErr);
 
   // calculate DMX speed Divider
   baud = (DMXSPEED * (1024 + oscErr)) / 1024;
-  DBG("DMX Baud Rate adjusted:", baud);
-
   _DMX_dmxDivider = (64 * F_CPU) / (16 * baud);
-  DBG("DMX Divider:", _DMX_dmxDivider);
 
   // calculate BREAK speed Divider
   baud = (BREAKSPEED * (1024 + oscErr)) / 1024;
-  DBG("BREAK Baud Rate adjusted:", baud);
-
   _DMX_breakDivider = (64 * F_CPU) / (16 * baud);
-  DBG("BREAK Divider:", _DMX_breakDivider);
 
   // disable interrupts during initialization
   uint8_t oldSREG = SREG;
@@ -76,8 +55,6 @@ void _DMX_init()
 
   // enable interrupts again, restore SREG content
   SREG = oldSREG;
-
-  // Serial.println("Initialized.");
 } // _DMX_init()
 
 

@@ -1,6 +1,7 @@
 // - - - - -
 // DMXSerial - A Arduino library for sending and receiving DMX using the builtin serial hardware port.
-// DMXSerial_avr.h: Hardware specific functions for AVR processors like ATmega168p used in Aurduino UNO.
+// DMXSerial_avr.h: Hardware specific functions for AVR processors like ATmega168 and ATmega328 used in Aurduino UNO.
+// Also supported boards are Leonardo and Mega2560.
 //
 // Copyright (c) 2011-2020 by Matthias Hertel, http://www.mathertel.de
 // This work is licensed under a BSD style license. See http://www.mathertel.de/License.aspx
@@ -8,7 +9,7 @@
 
 // global variables and functions are prefixed with "_DMX_"
 
-// ----- MegAVR specific Hardware abstraction functions -----
+// ----- ATMega specific hardware related functions -----
 
 #ifndef DMXSERIAL_AVR_H
 #define DMXSERIAL_AVR_H
@@ -139,18 +140,21 @@
 
 // ----- ATMega specific Hardware abstraction functions -----
 
-// calculate prescaler from baud rate and cpu clock rate at compile time
-// nb implements rounding of ((clock / 16) / baud) - 1 per atmega datasheet
+// calculate prescaler from baud rate and cpu clock rate at compile time.
+// This is a processor specific formular from the datasheet.
+// It implements rounding of ((clock / 16) / baud) - 1.
 #define CalcPreScale(B) (((((F_CPU) / 8) / (B)) - 1) / 2)
 
 const int32_t _DMX_dmxPreScale = CalcPreScale(DMXSPEED); // BAUD prescale factor for DMX speed.
 const int32_t _DMX_breakPreScale = CalcPreScale(BREAKSPEED); // BAUD prescale factor for BREAK speed.
 
+
+// initialize mode independent registers.
 void _DMX_init()
 {
   // 04.06.2012: use normal speed operation
   UCSRnA = 0;
-}
+} // _DMX_init()
 
 
 /// Initialize the Hardware UART serial port registers to the required mode.

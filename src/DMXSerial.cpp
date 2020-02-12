@@ -2,7 +2,7 @@
 // DMXSerial - A Arduino library for sending and receiving DMX using the builtin serial hardware port.
 // DMXSerial.cpp: Library implementation file
 //
-// Copyright (c) 2011 by Matthias Hertel, http://www.mathertel.de
+// Copyright (c) 2011-2020 by Matthias Hertel, http://www.mathertel.de
 // This work is licensed under a BSD style license. See http://www.mathertel.de/License.aspx
 //
 // Documentation and samples are available at http://www.mathertel.de/Arduino
@@ -19,7 +19,7 @@ void _DMXStartSending();
 void _DMXStartReceiving();
 
 // register interrupt for receiving data and frameerrors that calls _DMXReceived()
-void _DMXReceived(uint8_t data, uint8_t framerror);
+void _DMXReceived(uint8_t data, uint8_t frameerror);
 void _DMXTransmitted();
 
 
@@ -221,7 +221,7 @@ void DMXSerialClass::write(int channel, uint8_t value)
 } // write()
 
 
-// Return the DMX buffer of unsave direct but faster access
+// Return the DMX buffer for un-save direct but faster access
 uint8_t *DMXSerialClass::getBuffer()
 {
   return (_dmxData);
@@ -251,7 +251,7 @@ void DMXSerialClass::resetUpdated()
 
 // When mode is DMXProbe this function reads one DMX buffer and then returns.
 // wait a meaningful time on a packet.
-// return true whan a packet has been received.
+// return true when a packet has been received.
 bool DMXSerialClass::receive()
 {
   return (receive(DMXPROBE_RECV_MAX));
@@ -260,7 +260,7 @@ bool DMXSerialClass::receive()
 
 // When mode is DMXProbe this function reads one DMX buffer and then returns.
 // wait approximately gives the number of msecs for waiting on a packet.
-// return true whan a packet has been received.
+// return true when a packet has been received.
 bool DMXSerialClass::receive(uint8_t wait)
 {
   bool ret = false;
@@ -323,7 +323,7 @@ void _DMXStartReceiving()
 // This function is called by the Interrupt Service Routine when a byte or frame error was received.
 // In DMXController mode this interrupt is disabled and will not occur.
 // In DMXReceiver mode when a byte was received it is stored to the dmxData buffer.
-void _DMXReceived(uint8_t data, uint8_t framerror)
+void _DMXReceived(uint8_t data, uint8_t frameerror)
 {
   uint8_t DmxState = _dmxRecvState; //just load once from SRAM to increase speed
 
@@ -333,7 +333,7 @@ void _DMXReceived(uint8_t data, uint8_t framerror)
     return;
   }
 
-  if (framerror) { //check for break
+  if (frameerror) { //check for break
     // break condition detected.
     _dmxRecvState = BREAK;
     _dmxDataPtr = _dmxData;
