@@ -13,6 +13,7 @@
 #ifndef DMXSERIAL_MEGAAVR_H
 #define DMXSERIAL_MEGAAVR_H
 
+#if defined(DMXFORMAT) && defined(ARDUINO_ARCH_MEGAAVR)
 
 #include "Arduino.h"
 #include "DMXSerial.h"
@@ -148,5 +149,7 @@ ISR(USART1_DRE_vect)
 {
   _DMXTransmitted();
 } // ISR(USART1_DRE_vect)
+
+#endif
 
 #endif

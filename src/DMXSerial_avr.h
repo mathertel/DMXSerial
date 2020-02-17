@@ -14,9 +14,12 @@
 #ifndef DMXSERIAL_AVR_H
 #define DMXSERIAL_AVR_H
 
+#if defined(DMXFORMAT) && defined(ARDUINO_ARCH_AVR)
+
 #include "Arduino.h"
 #include "DMXSerial.h"
 #include "avr/io.h"
+#include "avr/interrupt.h"
 
 // ----- Constants -----
 
@@ -241,5 +244,7 @@ ISR(USARTn_UDRE_vect)
   _DMXTransmitted();
 } // ISR(USARTn_UDRE_vect)
 
+
+#endif
 
 #endif
