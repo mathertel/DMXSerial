@@ -30,6 +30,7 @@
 // 29.10.2017 documentation.
 // 
 // 07.02.2020 Refactored to support multiple hardware layers.
+// 26.02.2020 Version 1.5.0
 // - - - - -
 
 #ifndef DmxSerial_h
@@ -43,7 +44,7 @@
 
 #define DMXMODEPIN 2     ///< Arduino pin 2 for controlling the data direction is the default value.
 #define DmxModeOut HIGH  ///< set the level to HIGH for outgoing data direction
-#define DmxModeIn  LOW   ///< set the level to LOW  for incomming data direction
+#define DmxModeIn  LOW   ///< set the level to LOW  for incoming data direction
 
 #define DMXPROBE_RECV_MAX 50 // standard maximum of waiting for a DMX packet in DMXPROBE mode.
 

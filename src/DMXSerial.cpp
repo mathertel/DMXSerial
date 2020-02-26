@@ -63,11 +63,9 @@ typedef enum {
 
 #if defined(ARDUINO_ARCH_AVR)
 #include "DMXSerial_avr.h"
-#include <avr/interrupt.h>
 
 #elif defined(ARDUINO_ARCH_MEGAAVR)
 #include "DMXSerial_megaavr.h"
-#include "avr/io.h"
 
 #endif
 
@@ -241,6 +239,7 @@ bool DMXSerialClass::dataUpdated()
 {
   return (_dmxUpdated);
 }
+
 
 // reset DMX data update flag.
 void DMXSerialClass::resetUpdated()
