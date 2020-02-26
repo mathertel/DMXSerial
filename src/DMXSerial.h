@@ -28,6 +28,8 @@
 //            _DMXStartSending and _DMXStartReceiving functions.
 // 27.08.2017 DMXProbe mode finished.
 // 29.10.2017 documentation.
+// 
+// 07.02.2020 Refactored to support multiple hardware layers.
 // - - - - -
 
 #ifndef DmxSerial_h
@@ -57,6 +59,7 @@ typedef enum {
   DMXProbe       // send and receive upon request
 } DMXMode;
 
+
 // ----- Library Class -----
 
 extern "C" {
@@ -64,10 +67,10 @@ extern "C" {
 }
 
 /**
- * @brief Arduino library to send and receive DMXX.
+ * @brief Arduino library to send and receive DMX.
  *  
- * The library works unchanged with the Arduino 2009, UNO, MGEA 2560 and Leonardo boards. <br />
- * The Arduino MGEA 2560 boards use the serial port 0 on pins 0 an 1. <br />
+ * The library works unchanged with the Arduino 2009, UNO, MEGA 2560 and Leonardo boards. <br />
+ * The Arduino MEGA 2560 boards use the serial port 0 on pins 0 an 1. <br />
  * The Arduino Leonardo will use serial port 1, also on pins 0 an 1. (on the 32u4 boards the first USART is USART1) <br />
  * This is consistent with the Layout of the Arduino DMX Shield http://www.mathertel.de/Arduino/DMXShield.aspx.
  */
@@ -144,7 +147,7 @@ class DMXSerialClass
     void resetUpdated();
 
     /**
-     * @brief Actively wait for an incomming DMX packet.
+     * @brief Actively wait for an incoming DMX packet.
      * This function waits DMXPROBE_RECV_MAX milliseconds for a new package to receive.
      * @return true when a package was received.
      * @return false after timeout no package was received.
@@ -152,7 +155,7 @@ class DMXSerialClass
     bool receive();
 
     /**
-     * @brief Actively wait for an incomming DMX packet.
+     * @brief Actively wait for an incoming DMX packet.
      * This function waits the specified milliseconds for a new package to receive.
      * @param wait Milliseconds to wait for a new package.
      * @return true when a package was received.
