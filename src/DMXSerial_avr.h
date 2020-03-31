@@ -173,13 +173,13 @@ void _DMX_setMode(DMXUARTMode mode)
     // enable USART functions RX, TX, Interrupts
     UCSRnB = (1 << RXENn);
     // stop bits and character size
-    UCSRnC = SERIAL_8N1;
+    UCSRnC = SERIAL_8N1; // accept data packets after first stop bit
 
   } else if (mode == DMXUARTMode::RDATA) {
     UBRRnH = _DMX_dmxPreScale >> 8;
     UBRRnL = _DMX_dmxPreScale;
     UCSRnB = (1 << RXENn) | (1 << RXCIEn);
-    UCSRnC = SERIAL_8N1;
+    UCSRnC = SERIAL_8N1; // accept data packets after first stop bit
 
   } else if (mode == DMXUARTMode::TBREAK) {
     UBRRnH = _DMX_breakPreScale >> 8;
@@ -191,13 +191,13 @@ void _DMX_setMode(DMXUARTMode mode)
     UBRRnH = _DMX_dmxPreScale >> 8;
     UBRRnL = _DMX_dmxPreScale;
     UCSRnB = ((1 << TXENn) | (1 << UDRIEn));
-    UCSRnC = SERIAL_8N1;
+    UCSRnC = SERIAL_8N2; // send with 2 stop bits for compatibility
 
   } else if (mode == DMXUARTMode::TDONE) {
     UBRRnH = _DMX_dmxPreScale >> 8;
     UBRRnL = _DMX_dmxPreScale;
     UCSRnB = ((1 << TXENn) | (1 << TXCIEn));
-    UCSRnC = SERIAL_8N1;
+    UCSRnC = SERIAL_8N2; // send with 2 stop bits for compatibility
   } // if
 } // _DMX_setMode()
 

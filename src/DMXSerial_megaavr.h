@@ -77,13 +77,13 @@ void _DMX_setMode(DMXUARTMode mode)
 
   } else if (mode == DMXUARTMode::RONLY) {
     (USART1).BAUD = (int16_t)_DMX_dmxDivider; // assign the baud_divider, a.k.a. BAUD (USART Baud Rate Register)
-    (USART1).CTRLC = SERIAL_8N1; // Set USART mode of operation
+    (USART1).CTRLC = SERIAL_8N1; // accept data packets after first stop bit
     (USART1).CTRLB = USART_RXEN_bm | USART_RXMODE_NORMAL_gc; // Enable receiver only, normal speed
     (USART1).CTRLA = 0; // disable all interrupts
 
   } else if (mode == DMXUARTMode::RDATA) {
     (USART1).BAUD = (int16_t)_DMX_dmxDivider; // assign the baud_divider, a.k.a. BAUD (USART Baud Rate Register)
-    (USART1).CTRLC = SERIAL_8N1; // Set USART mode of operation
+    (USART1).CTRLC = SERIAL_8N1; // accept data packets after first stop bit
     (USART1).CTRLB = USART_RXEN_bm | USART_RXMODE_NORMAL_gc; // Enable receiver only, normal speed
     (USART1).CTRLA = USART_RXCIE_bm; // enable receive complete interrupt
 
@@ -95,13 +95,13 @@ void _DMX_setMode(DMXUARTMode mode)
 
   } else if (mode == DMXUARTMode::TDATA) {
     (USART1).BAUD = (int16_t)_DMX_dmxDivider; // assign the baud_divider, a.k.a. BAUD (USART Baud Rate Register)
-    (USART1).CTRLC = SERIAL_8N1; // Set USART mode of operation
+    (USART1).CTRLC = SERIAL_8N2; // send with 2 stop bits for compatibility
     (USART1).CTRLB = USART_TXEN_bm | USART_RXMODE_NORMAL_gc; // Enable transmitter only, normal speed
     (USART1).CTRLA = USART_DREIE_bm; // enable data register empty interrupt
 
   } else if (mode == DMXUARTMode::TDONE) {
     (USART1).BAUD = (int16_t)_DMX_dmxDivider; // assign the baud_divider, a.k.a. BAUD (USART Baud Rate Register)
-    (USART1).CTRLC = SERIAL_8N1; // Set USART mode of operation
+    (USART1).CTRLC = SERIAL_8N2; // send with 2 stop bits for compatibility
     (USART1).CTRLB = USART_TXEN_bm | USART_RXMODE_NORMAL_gc; // Enable transmitter only, normal speed
     (USART1).CTRLA = USART_TXCIE_bm; // enable transmit complete interrupt
   } // if
