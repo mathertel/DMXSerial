@@ -302,7 +302,6 @@ void _DMXStartSending()
   // Enable transmitter and interrupt
   _DMX_setMode(DMXUARTMode::TBREAK);
   _DMX_writeByte((uint8_t)0);
-
 } // _DMXStartSending()
 
 

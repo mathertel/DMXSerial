@@ -101,8 +101,7 @@ void _DMX_setMode(DMXUARTMode mode)
 
   } else if (mode == DMXUARTMode::TDONE) {
     (USART1).BAUD = (int16_t)_DMX_dmxDivider; // assign the baud_divider, a.k.a. BAUD (USART Baud Rate Register)
-    (USART1).CTRLC = SERIAL_8N2; // send with 2 stop bits for compatibility
-    (USART1).CTRLB = USART_TXEN_bm | USART_RXMODE_NORMAL_gc; // Enable transmitter only, normal speed
+    (USART1).CTRLC = DMXFORMAT; // send with 2 stop bits for compatibility
     (USART1).CTRLA = USART_TXCIE_bm; // enable transmit complete interrupt
   } // if
 
