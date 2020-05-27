@@ -48,15 +48,16 @@ typedef enum {
 // Baud rate for DMX protocol
 #define DMXSPEED 250000L
 
-// the break timing is 10 bits (start + 8 data + parity) of this speed
+// the break timing is 10 bits (start + 8 data + 1 (even) parity) of this speed
 // the mark-after-break is 1 bit of this speed plus approx 6 usec
 // 100000 bit/sec is good: gives 100 usec break and 16 usec MAB
 // 1990 spec says transmitter must send >= 92 usec break and >= 12 usec MAB
 // receiver must accept 88 us break and 8 us MAB
 #define BREAKSPEED 100000L
 
-#define BREAKFORMAT SERIAL_8E1
-#define DMXFORMAT SERIAL_8N1
+#define BREAKFORMAT SERIAL_8E2
+#define DMXFORMAT SERIAL_8N2
+#define DMXREADFORMAT SERIAL_8N1
 
 
 // ----- include processor specific definitions and functions.
