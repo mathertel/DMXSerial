@@ -405,9 +405,13 @@ void _DMXTransmitted()
     _dmxChannel = 1;
 
   } else {
-    _DMX_writeByte(_dmxData[_dmxChannel++]);
-
-    if (_dmxChannel > _dmxMaxChannel) {
+    if (_dmxChannel < _dmxMaxChannel) {
+      // just send the next data
+      _DMX_writeByte(_dmxData[_dmxChannel++]);
+    } else {
+      // last data
+      _DMX_setMode(DMXUARTMode::TDONE);
+      _DMX_writeByte(_dmxData[_dmxChannel]);
       _dmxChannel = -1; // this series is done. Next time: restart with break.
       _DMX_setMode(DMXUARTMode::TDONE);
     } // if
