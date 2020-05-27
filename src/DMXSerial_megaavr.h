@@ -88,20 +88,27 @@ void _DMX_setMode(DMXUARTMode mode)
 
   } else if (mode == DMXUARTMode::TBREAK) {
     // start UART with break settings, don't enable interrupts yet
+    (USART1).CTRLB = 0; // no operation
+    (USART1).CTRLA = 0; // disable all interrupts
+
     (USART1).BAUD = (int16_t)_DMX_breakDivider; // assign the baud_divider, a.k.a. BAUD (USART Baud Rate Register)
     (USART1).CTRLC = BREAKFORMAT; // Set USART mode of operation
+    (USART1).CTRLB = USART_TXEN_bm; // Enable transmitter only, normal speed
+    pinMode(PIN_WIRE_HWSERIAL1_TX, OUTPUT); // is required again after disabling UART
+    (USART1).STATUS = USART_TXCIF_bm; //  clear transmit complete flag
     (USART1).CTRLA = USART_TXCIE_bm; // enable transmit complete interrupt
 
   } else if (mode == DMXUARTMode::TDATA) {
     // switch to dmx data mode
+    (USART1).CTRLA = 0; // disable all interrupts
     (USART1).BAUD = (int16_t)_DMX_dmxDivider; // assign the baud_divider, a.k.a. BAUD (USART Baud Rate Register)
-    (USART1).CTRLC = SERIAL_8N2; // send with 2 stop bits for compatibility
-    (USART1).CTRLB = USART_TXEN_bm | USART_RXMODE_NORMAL_gc; // Enable transmitter only, normal speed
+    (USART1).CTRLC = DMXFORMAT; // send with 2 stop bits for compatibility
     (USART1).CTRLA = USART_DREIE_bm; // enable data register empty interrupt
 
   } else if (mode == DMXUARTMode::TDONE) {
     (USART1).BAUD = (int16_t)_DMX_dmxDivider; // assign the baud_divider, a.k.a. BAUD (USART Baud Rate Register)
     (USART1).CTRLC = DMXFORMAT; // send with 2 stop bits for compatibility
+    (USART1).STATUS = USART_TXCIF_bm; //  clear transmit complete flag
     (USART1).CTRLA = USART_TXCIE_bm; // enable transmit complete interrupt
   } // if
 
