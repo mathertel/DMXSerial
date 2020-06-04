@@ -1,7 +1,6 @@
 # DMXSerial
 
 [![arduino-library-badge](https://www.ardu-badge.com/badge/DMXSerial.svg?)](https://www.ardu-badge.com/DMXSerial)
-
 [![GitLicense](https://gitlicense.com/badge/mathertel/DMXSerial)](https://gitlicense.com/license/mathertel/DMXSerial)
 
 
