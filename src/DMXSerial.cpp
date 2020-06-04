@@ -413,7 +413,6 @@ void _DMXTransmitted()
       _DMX_setMode(DMXUARTMode::TDONE);
       _DMX_writeByte(_dmxData[_dmxChannel]);
       _dmxChannel = -1; // this series is done. Next time: restart with break.
-      _DMX_setMode(DMXUARTMode::TDONE);
     } // if
 
   } // if
