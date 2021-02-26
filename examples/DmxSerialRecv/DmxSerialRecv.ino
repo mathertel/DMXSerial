@@ -26,7 +26,7 @@ const int GreenPin =  6;  // PWM output pin for Green Light.
 const int BluePin =   5;  // PWM output pin for Blue Light.
 
 // This Example receives the 3 values starting with this channel:
-const int startChannel = 58 * 3 + 1;
+const int startChannel = 0 * 3 + 1;
 
 #define RedDefaultLevel   100
 #define GreenDefaultLevel 200
