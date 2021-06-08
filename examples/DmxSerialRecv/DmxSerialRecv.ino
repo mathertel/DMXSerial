@@ -33,8 +33,6 @@ const int startChannel = 0 * 3 + 1;
 #define BlueDefaultLevel  255
 
 void setup() {
-  Serial.begin(115200);
-
   DMXSerial.init(DMXReceiver);
 
   // set some default values
@@ -50,7 +48,7 @@ void setup() {
 
 
 void loop() {
-  // Calculate how long no data backet was received
+  // Calculate how long no data bucket was received
   unsigned long lastPacket = DMXSerial.noDataSince();
 
   if (lastPacket < 5000) {
