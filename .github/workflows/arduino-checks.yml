@@ -32,12 +32,28 @@ jobs:
           library-manager: update
           verbose: false
 
-      # Compile Examples
-      - name: Compile examples
+      # Compile Examples for UNO
+      - name: Compile examples for UNO
         uses: arduino/compile-sketches@v1
         with:
           verbose: true
           fqbn: 'arduino:avr:uno'
-          # sketch-paths: |
-          #   - 'examples/DmxSerialRecv'
-          #   - 'examples/DmxSerialSend'
+          sketch-paths: |
+            - 'examples/DMXSerialFlow'
+            - 'examples/DmxSerialNeoPixels'
+            - 'examples/DmxSerialRecv'
+            - 'examples/DmxSerialSend'
+            # - 'examples/DmxSniff'
+
+      # Compile Examples for Leonardo
+      - name: Compile examples for Leonardo
+        uses: arduino/compile-sketches@v1
+        with:
+          verbose: true
+          fqbn: 'arduino:avr:leonardo'
+          sketch-paths: |
+            - 'examples/DMXSerialFlow'
+            - 'examples/DmxSerialNeoPixels'
+            - 'examples/DmxSerialRecv'
+            - 'examples/DmxSerialSend'
+            - 'examples/DmxSniff'
