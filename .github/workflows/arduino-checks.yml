@@ -35,3 +35,13 @@ jobs:
         with:
           library-manager: update
           verbose: false
+
+      # Compile Examples
+      - name: Compile examples
+        uses: arduino/compile-sketches@v1
+        with:
+          verbose: true
+          fqbn: 'arduino:avr:uno'
+        sketch-paths: |
+            - 'examples/DmxSerialRecv'
+            - 'examples/DmxSerialSend'
