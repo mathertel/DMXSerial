@@ -25,10 +25,6 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      # **Add actions here**
-      - name: report environment
-        run: export
-
       # Arduino - lint
       - name: Arduino-lint
         uses: arduino/arduino-lint-action@v1
@@ -42,6 +38,6 @@ jobs:
         with:
           verbose: true
           fqbn: 'arduino:avr:uno'
-          sketch-paths: |
-            - 'examples/DmxSerialRecv'
-            - 'examples/DmxSerialSend'
+          # sketch-paths: |
+          #   - 'examples/DmxSerialRecv'
+          #   - 'examples/DmxSerialSend'
