@@ -46,14 +46,14 @@ jobs:
             # - 'examples/DmxSniff'
 
       # Compile Examples for Leonardo
-      - name: Compile examples for Leonardo
-        uses: arduino/compile-sketches@v1
-        with:
-          verbose: true
-          fqbn: 'arduino:avr:leonardo'
-          sketch-paths: |
-            - 'examples/DMXSerialFlow'
-            - 'examples/DmxSerialNeoPixels'
-            - 'examples/DmxSerialRecv'
-            - 'examples/DmxSerialSend'
-            - 'examples/DmxSniff'
+      # - name: Compile examples for Leonardo
+      #   uses: arduino/compile-sketches@v1
+      #   with:
+      #     verbose: true
+      #     fqbn: 'arduino:avr:leonardo'
+      #     sketch-paths: |
+      #       - 'examples/DMXSerialFlow'
+      #       - 'examples/DmxSerialNeoPixels'
+      #       - 'examples/DmxSerialRecv'
+      #       - 'examples/DmxSerialSend'
+      #       - 'examples/DmxSniff'
