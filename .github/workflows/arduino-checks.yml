@@ -28,3 +28,10 @@ jobs:
       # **Add actions here**
       - name: report environment
         run: export
+
+      # Arduino - lint
+      - name: Arduino-lint
+        uses: arduino/arduino-lint-action@v1
+        with:
+          library-manager: update
+          verbose: false
