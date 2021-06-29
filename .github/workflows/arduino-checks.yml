@@ -43,8 +43,8 @@ jobs:
           - arduino:avr:uno
           - arduino:avr:leonardo
           - arduino:avr:mega
+          - arduino:megaavr:nona4809:mode=off
           # - arduino:megaavr:uno2018:mode=on
-          # arduino:megaavr:nona4809:mode=off
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -64,15 +64,3 @@ jobs:
             - 'examples/DmxSerialSend'
             # - 'examples/DmxSniff'
 
-      # Compile Examples for Leonardo
-      # - name: Compile examples for Leonardo
-      #   uses: arduino/compile-sketches@v1
-      #   with:
-      #     verbose: true
-      #     fqbn: 'arduino:avr:leonardo'
-      #     sketch-paths: |
-      #       - 'examples/DMXSerialFlow'
-      #       - 'examples/DmxSerialNeoPixels'
-      #       - 'examples/DmxSerialRecv'
-      #       - 'examples/DmxSerialSend'
-      #       - 'examples/DmxSniff'
