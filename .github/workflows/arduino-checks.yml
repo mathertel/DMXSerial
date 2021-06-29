@@ -13,14 +13,14 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "checks"
-  checks:
-    # The type of runner that the job will run on
+
+  # This defines a job for checking the Arduino library format specifications
+  # see <https://github.com/marketplace/actions/arduino-arduino-lint-action>
+  lint:
+    name: check library format
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
@@ -32,12 +32,31 @@ jobs:
           library-manager: update
           verbose: false
 
+  # 
+  checks:
+    name: 
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        fqbn:
+          - arduino:avr:uno
+          - arduino:avr:leonardo
+          - arduino:avr:mega
+          # - arduino:megaavr:uno2018:mode=on
+          # arduino:megaavr:nona4809:mode=off
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
       # Compile Examples for UNO
-      - name: Compile examples for UNO
+      - name: Compile examples on various processors
         uses: arduino/compile-sketches@v1
         with:
           verbose: true
-          fqbn: 'arduino:avr:uno'
+          fqbn: ${{ matrix.fqbn }}
           sketch-paths: |
             - 'examples/DMXSerialFlow'
             - 'examples/DmxSerialNeoPixels'
