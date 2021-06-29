@@ -3,6 +3,8 @@
 [![arduino-library-badge](https://www.ardu-badge.com/badge/DMXSerial.svg?)](https://www.ardu-badge.com/DMXSerial)
 [![GitLicense](https://gitlicense.com/badge/mathertel/DMXSerial)](https://gitlicense.com/license/mathertel/DMXSerial)
 
+[![Arduino Library Checks](https://github.com/mathertel/DMXSerial/actions/workflows/arduino-checks.yml/badge.svg)](https://github.com/mathertel/DMXSerial/actions/workflows/arduino-checks.yml)
+
 
 This is a library for sending and receiving DMX codes using the Arduino platform.
 You can implement DMX devices and DMX controllers with this library.

@@ -44,7 +44,6 @@ jobs:
           - arduino:avr:leonardo
           - arduino:avr:mega
           - arduino:megaavr:nona4809:mode=off
-          # - arduino:megaavr:uno2018:mode=on
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -59,7 +58,7 @@ jobs:
           fqbn: ${{ matrix.fqbn }}
           sketch-paths: |
             - 'examples/DMXSerialFlow'
-            - 'examples/DmxSerialNeoPixels'
+            # - 'examples/DmxSerialNeoPixels'
             - 'examples/DmxSerialRecv'
             - 'examples/DmxSerialSend'
             # - 'examples/DmxSniff'
