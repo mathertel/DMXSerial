@@ -93,7 +93,7 @@ int _dmxModePin; // pin used for I/O direction.
 uint8_t _dmxRecvState; // Current State of receiving DMX Bytes
 int _dmxChannel; // the next channel byte to be sent.
 
-volatile unsigned int _dmxMaxChannel = 32; // the last channel used for sending (1..32).
+volatile int _dmxMaxChannel = 32; // the last channel used for sending (1..512).
 volatile unsigned long _dmxLastPacket = 0; // the last time (using the millis function) a packet was received.
 
 bool _dmxUpdated = true; // is set to true when new data arrived.
@@ -204,10 +204,6 @@ void DMXSerialClass::write(int channel, uint8_t value)
     channel = 1;
   if (channel > DMXSERIAL_MAX)
     channel = DMXSERIAL_MAX;
-  if (value < 0)
-    value = 0;
-  if (value > 255)
-    value = 255;
 
   // store value for later sending
   _dmxData[channel] = value;
@@ -308,8 +304,6 @@ void _DMXStartSending()
 // Setup Hardware for Receiving
 void _DMXStartReceiving()
 {
-  uint8_t voiddata;
-
   // Enable receiver and Receive interrupt
   _dmxDataPtr = _dmxData;
   _dmxRecvState = STARTUP;

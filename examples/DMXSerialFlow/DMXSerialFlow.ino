@@ -21,8 +21,6 @@ const int RedPin =    9;  // PWM output pin for Red Light.
 const int GreenPin =  6;  // PWM output pin for Green Light.
 const int BluePin =   5;  // PWM output pin for Blue Light.
 
-#define PIXELS 60
-
 void setup(void)
 {
   // Serial.begin(57600); // only on Leonardo
@@ -71,7 +69,7 @@ void setChannelRGB(int channel, int hue) {
 void loop(void)
 {
   unsigned long now = millis();
-  int testchannel = 1;
+  int testchannel;
   
   // create some DMX test values: 5 RGB channels
   // adjust the "12" for changing the speed
@@ -82,10 +80,23 @@ void loop(void)
   // uncomment this line to have a scenario where DMX values are changed every 5 seconds 
   // alpha &= 0xFF00;
 
-  for (int n = 0; n < PIXELS; n++) {
+  // setup for 60 devices with RGB (3) channels; len = 180
+  testchannel = 1;
+  for (int n = 0; n < 60; n++) {
     setChannelRGB (n*3+1, alpha + n*64);
   } // for
   
+  // setup for 30 devices with aRGBW--- (8) channels; len = 480
+  // testchannel = 2;
+  // for (int n = 0; n < 60; n++) {
+  //   DMXSerial.write(n*8+1, 250);
+  //   setChannelRGB (n*8+2, alpha + n*64);
+  //   DMXSerial.write(n*8+5, 0);
+  //   DMXSerial.write(n*8+6, 0);
+  //   DMXSerial.write(n*8+7, 0);
+  //   DMXSerial.write(n*8+8, 0);
+  // } // for
+
   // send the DMX values fo the testchannel to the PWM pins
   analogWrite(RedPin,   DMXSerial.read(testchannel+0));
   analogWrite(GreenPin, DMXSerial.read(testchannel+1));

@@ -202,7 +202,7 @@ void _DMX_setMode(DMXUARTMode mode)
 } // _DMX_setMode()
 
 
-// flush all incomming data packets in the queue
+// flush all incoming data packets in the queue
 void _DMX_flush()
 {
   uint8_t voiddata;
