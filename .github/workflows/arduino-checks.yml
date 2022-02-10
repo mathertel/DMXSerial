@@ -20,9 +20,9 @@ jobs:
   lint:
     name: check library format
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
       # Arduino - lint
@@ -32,34 +32,83 @@ jobs:
           library-manager: update
           verbose: false
 
-  # 
-  checks:
-    name: 
+  # These jobs are used to compile the examples fot the specific processor/board.
+  # see <https://github.com/marketplace/actions/compile-arduino-sketches>
+  compile-uno:
+    name: compile uno examples
     runs-on: ubuntu-latest
+    continue-on-error: true
 
-    strategy:
-      matrix:
-        fqbn:
-          - arduino:avr:uno
-          - arduino:avr:leonardo
-          - arduino:avr:mega
-          - arduino:megaavr:nona4809:mode=off
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
       # Compile Examples for UNO
-      - name: Compile examples on various processors
+      - name: Compile examples on uno
         uses: arduino/compile-sketches@v1
         with:
           verbose: true
-          fqbn: ${{ matrix.fqbn }}
+          fqbn: arduino:avr:uno
           sketch-paths: |
             - 'examples/DMXSerialFlow'
-            # - 'examples/DmxSerialNeoPixels'
             - 'examples/DmxSerialRecv'
             - 'examples/DmxSerialSend'
-            # - 'examples/DmxSniff'
 
+  compile-leonardo:
+    needs: compile-uno
+    name: compile leonardo examples
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Compile for leonardo
+        uses: arduino/compile-sketches@v1
+        with:
+          verbose: true
+          fqbn: arduino:avr:leonardo
+          sketch-paths: |
+            - 'examples/DMXSerialFlow'
+            - 'examples/DmxSerialNeoPixels'
+            - 'examples/DmxSerialRecv'
+            - 'examples/DmxSerialSend'
+            - 'examples/DmxSniff'
+            
+  compile-mega:
+    needs: compile-uno
+    name: compile examples for mega
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Compile for mega
+        uses: arduino/compile-sketches@v1
+        with:
+          verbose: true
+          fqbn: arduino:avr:mega
+          sketch-paths: |
+            - 'examples/DMXSerialFlow'
+            - 'examples/DmxSerialNeoPixels'
+            - 'examples/DmxSerialRecv'
+            - 'examples/DmxSerialSend'
+
+  compile-atmega4809:
+    needs: compile-uno
+    name: compile examples for atmega4809
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Compile for atmega4809
+        uses: arduino/compile-sketches@v1
+        with:
+          verbose: true
+          fqbn: arduino:megaavr:nona4809:mode=off
+          sketch-paths: |
+            - 'examples/DMXSerialFlow'
+            - 'examples/DmxSerialRecv'
+            - 'examples/DmxSerialSend'
