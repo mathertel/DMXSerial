@@ -144,7 +144,7 @@
 // ----- ATMega specific Hardware abstraction functions -----
 
 // calculate prescaler from baud rate and cpu clock rate at compile time.
-// This is a processor specific formular from the datasheet.
+// This is a processor specific formula from the datasheet.
 // It implements rounding of ((clock / 16) / baud) - 1.
 #define CalcPreScale(B) (((((F_CPU) / 8) / (B)) - 1) / 2)
 
