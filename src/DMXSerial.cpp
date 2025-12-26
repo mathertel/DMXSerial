@@ -55,10 +55,22 @@ typedef enum {
 // receiver must accept 88 us break and 8 us MAB
 #define BREAKSPEED 100000L
 
+#if !defined(DMX_USE_PORT1) && defined(USART_RXC_vect)
+
+// ATMEGA8 requires that URSEL be set to 1 when writing to register UCSRC
+// This definition appends the required bit to the serial definition
+
+#define BREAKFORMAT (SERIAL_8E2 | (1<<URSEL))
+#define DMXFORMAT (SERIAL_8N2 | (1<<URSEL))
+#define DMXREADFORMAT (SERIAL_8N1 | (1<<URSEL))
+
+#else
+
 #define BREAKFORMAT SERIAL_8E2
 #define DMXFORMAT SERIAL_8N2
 #define DMXREADFORMAT SERIAL_8N1
 
+#endif
 
 // ----- include processor specific definitions and functions.
 
